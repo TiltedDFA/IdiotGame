@@ -211,7 +211,7 @@ namespace durak::core
     {
         PlyrIdxT const actor = (phase_ == Phase::Defending) ? defender_idx_ : attacker_idx_;
 
-        auto snap{SnapshotFor(actor)};
+        std::shared_ptr<GameSnapshot const> snap{SnapshotFor(actor)};
         auto deadline = std::chrono::steady_clock::now() + cfg_.turn_timeout;
 
         PlayerAction const action = players_[actor]->Play(std::move(snap), deadline);
