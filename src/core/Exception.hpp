@@ -56,7 +56,7 @@ namespace durak::core::error
     using ValidateResult = std::expected<void, RuleViolation>;
 
     #define DRK_THROW(code_enum, msg) ::durak::core::error::fail((code_enum), (msg))
-    #define DRK_ASSERT(cond, msg) do { if(!(cond)) ::durak::err::fail(::durak::err::Code::Assertion, (msg)); } while(0)
+    #define DRK_ASSERT(cond, msg) do { if(!(cond)) ::durak::core::error::fail(::durak::core::error::Code::Assertion, (msg)); } while(0)
 }
 
 #endif //IDIOTGAME_EXCEPTION_HPP

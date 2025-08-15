@@ -11,7 +11,10 @@
 
 namespace durak::core
 {
-
+    inline auto SameCard(Card const& a, Card const& b) -> bool
+    {
+        return a.suit == b.suit && a.rank == b.rank;
+    }
 }
 
 #endif //IDIOTGAME_UTIL_HPP

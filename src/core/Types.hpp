@@ -13,6 +13,7 @@
 #include <vector>
 #include <array>
 #include <chrono>
+#include <random>
 #include <variant>
 namespace durak::core::constants
 {
@@ -22,14 +23,14 @@ namespace durak::core
 {
     enum class Suit : uint8_t
     {
-        Hearts,
+        Hearts = 0,
         Diamonds,
         Clubs,
         Spades
     };
     enum class Rank : uint8_t
     {
-        Two,
+        Two = 0,
         Three,
         Four,
         Five,
@@ -63,6 +64,19 @@ namespace durak::core
         CardSP attack;
         CardSP defend;
     };
+
+    struct Config
+    {
+        uint32_t n_players{2};
+        uint8_t  deal_up_to{6};
+        // true = 36-card (Six..Ace), false = 52-card
+        bool     deck36{true};
+        uint64_t seed{std::random_device{}()};
+        std::chrono::milliseconds turn_timeout{std::chrono::seconds(30ULL)};
+    };
+
+    using TableT = std::array<TableSlot, constants::MaxTableSlots>;
+    using PlyrIdxT = uint8_t;
 }
 
 #endif //IDIOTGAME_TYPES_HPP

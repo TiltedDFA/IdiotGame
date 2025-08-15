@@ -17,11 +17,10 @@ namespace durak::core
     {
         Suit trump{};
         uint8_t n_players{};
-        uint8_t attacker_idx{}, defender_idx{};
+        PlyrIdxT attacker_idx{}, defender_idx{};
         Phase   phase{Phase::Attacking};
 
-        std::array<CardWP, constants::MaxTableSlots> attack{};
-        std::array<CardWP, constants::MaxTableSlots> defense{};
+        TableT table{};
 
         // for UI: reveal my hand, counts for others
         std::vector<CardWP> my_hand;
