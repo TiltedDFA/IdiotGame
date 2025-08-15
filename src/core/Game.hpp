@@ -40,16 +40,18 @@ namespace durak::core
         friend class ClassicRules;
 
         //returns nullptr if doesnt exist
-        auto FindFromHand(PlyrIdxT seat, Card const& c) const -> CardWP;
-        auto FindFromAtkTable(PlyrIdxT seat, Card const& c) const -> CardWP;
+        auto FindFromHand(PlyrIdxT const seat, Card const& c) const -> CardWP;
+        auto FindFromAtkTable(Card const& c) const -> CardWP;
 
         //Handles both moving cards to attk and defend, will treat intent as move to atk
         //if def is null. Throws if invariants break.
-        auto HandToTable(PlyrIdxT seat, CardWP const& atk, CardWP const& def = {});
+        auto MoveHandToTable(PlyrIdxT const seat, CardWP const& atk, CardWP const& def = {}) -> void;
         auto ClearTable() -> void;
-        auto TableToDefHand() -> void;
+        auto MoveTableToDefenderHand() -> void;
+        //Uses the specific order for Durak
+        auto RefillHands() -> void;
 
-        auto NextSeat(PlyrIdxT const idx) const -> PlyrIdxT { return static_cast<PlyrIdxT>((idx + 1) % players_.size()); }
+        inline auto NextSeat(PlyrIdxT const idx) const -> PlyrIdxT { return static_cast<PlyrIdxT>((idx + 1) % players_.size()); }
         auto AllAttacksCovered() const -> bool;
     private:
         //Produces a shuffled deck

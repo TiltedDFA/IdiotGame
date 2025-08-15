@@ -19,6 +19,8 @@ add_executable(IdiotGame
         src/core/Game.cpp
 )
 
+target_compile_options(IdiotGame PRIVATE -Wall -Wextra -pedantic -std=c++23)
 if (MINGW)
     target_link_libraries(IdiotGame PRIVATE stdc++exp)
 endif()
+

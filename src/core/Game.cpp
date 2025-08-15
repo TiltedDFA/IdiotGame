@@ -2,6 +2,8 @@
 // Created by Malik T on 15/08/2025.
 //
 #include "Game.hpp"
+#include <ranges>
+
 
 namespace durak::core
 {
@@ -58,5 +60,169 @@ namespace durak::core
         phase_ = Phase::Attacking;
         defender_took_ = false;
     }
+    //helpers for snapshotfor
+    template<typename T>
+    static auto Shared_to_weak(std::vector<std::shared_ptr<T>> const& vec)
+        -> std::vector<std::weak_ptr<T>>
+    {
+        return std::vector<std::weak_ptr<T>>(vec.cbegin(), vec.cend());
+    }
+    template<std::size_t... I>
+    inline auto ViewTableHelper(TableT const& src, std::index_sequence<I...>) -> TableViewT
+    {
+        return TableViewT{ TableSlotView{ src[I].attack, src[I].defend }... };
+    }
+
+    inline auto MakeViewTable(TableT const& src) -> TableViewT
+    {
+        return ViewTableHelper(src, std::make_index_sequence<constants::MaxTableSlots>{});
+    }
+
+    auto GameImpl::SnapshotFor(uint8_t seat) const -> std::shared_ptr<GameSnapshot const>
+    {
+        std::shared_ptr<GameSnapshot> snap = std::make_shared<GameSnapshot>();
+        snap->trump = trump_;
+        snap->n_players = players_.size();
+        snap->attacker_idx = attacker_idx_;
+        snap->defender_idx = defender_idx_;
+        snap->phase = phase_;
+
+        snap->table = std::move(MakeViewTable(table_));
+        snap->my_hand = std::move(Shared_to_weak(hands_[seat]));
+
+        for (auto const& hand : hands_)
+        {
+            snap->other_counts.push_back(hand.size());
+        }
+        //not setting deadline yet
+        return snap;
+    }
+
+    auto GameImpl::FindFromHand(PlyrIdxT const seat, Card const& c) const -> CardWP
+    {
+        auto const it = std::ranges::find_if(std::as_const(hands_[seat]),
+            [&c](CardSP const& csp){ return c == *csp;});
+        return (it != std::cend(hands_[seat])) ? CardWP{*it} : CardWP{};
+    }
+
+    auto GameImpl::FindFromAtkTable(Card const& c) const -> CardWP
+    {
+        auto const it = std::ranges::find_if(std::as_const(table_),
+    [&c](TableSlot const& ts){ if (!ts.attack) return false; return c == *ts.attack;});
+        return (it != std::cend(table_)) ? CardWP{it->attack} : CardWP{};
+    }
+
+    auto GameImpl::MoveHandToTable(PlyrIdxT const seat, CardWP const& atk, CardWP const& def) -> void
+    {
+        DRK_ASSERT(!atk.expired(), "Attacker card null (Should never happen)");
+
+        CCardSP atk_card = atk.lock();
+        auto& hand = hands_.at(seat);
+        //if defender card not present, the intended request is interpreted as an attacker
+        //conducting an attack
+        if (def.expired())
+        {
+            auto const it =
+                std::ranges::find_if(hand, [&atk_card](CardSP const& csp)
+                    { return *csp == *atk_card;});
+            DRK_ASSERT(it != std::end(hand), "Attacker card not in hand");
+
+            auto const free_slot_it = std::ranges::find_if(table_,
+                [](TableSlot const& s) {return !(s.attack);});
+
+            if (free_slot_it == std::end(table_))
+                DRK_THROW(durak::core::error::Code::State, "No free table slots");
+
+            free_slot_it->attack = std::move(*it);
+            hand.erase(it);
+        }
+        else
+        {
+            CCardSP def_card = def.lock();
+            auto const it =
+                std::ranges::find_if(hand, [&def_card](CardSP const& csp)
+                    { return *csp == *def_card;});
+
+            DRK_ASSERT(it != std::end(hand), "Defender card not in hand");
+
+            auto const cover_slot_it = std::ranges::find_if(table_,
+            [&](TableSlot const& s) {return s.attack && *s.attack == *atk_card;});
+
+            if (cover_slot_it == std::end(table_)) DRK_THROW(durak::core::error::Code::State, "Card which you attempt to cover doesn't exist");
+            if (cover_slot_it->defend) DRK_THROW(durak::core::error::Code::State, "Card which you attempt to cover is already covered");
+
+            cover_slot_it->defend = std::move(*it);
+            hand.erase(it);
+        }
+    }
+
+    auto GameImpl::ClearTable() -> void
+    {
+        auto reset_table_slot = [](TableSlot& ts) {ts.attack.reset(); ts.defend.reset();};
+        std::ranges::for_each(table_, reset_table_slot);
+    }
+
+    auto GameImpl::MoveTableToDefenderHand() -> void
+    {
+        auto& hand = hands_.at(defender_idx_);
+        for (auto& ts : table_)
+        {
+            if (ts.attack) hand.push_back(std::move(ts.attack));
+            if (ts.defend) hand.push_back(std::move(ts.defend));
+            ts.attack.reset();
+            ts.defend.reset();
+        }
+    }
+
+    auto GameImpl::RefillHands() -> void
+    {
+        auto needs_cards = [&](PlyrIdxT const seat) { return hands_[seat].size() < cfg_.deal_up_to; };
+        auto draw_card = [&](PlyrIdxT const seat) -> bool
+        {
+            if (deck_.empty()) return false;
+            hands_[seat].push_back(std::move(deck_.back()));
+            deck_.pop_back();
+            return true;
+        };
+
+        bool was_drawn = true;
+        while (was_drawn)
+        {
+            was_drawn = false;
+            for (uint8_t offset = 0; offset < players_.size(); ++offset)
+            {
+                uint8_t const seat = (attacker_idx_ + offset) % players_.size();
+                if (needs_cards(seat)) was_drawn |= draw_card(seat);
+                if (deck_.empty()) break;
+            }
+        }
+    }
+
+    auto GameImpl::AllAttacksCovered() const -> bool
+    {
+        for (auto const& ts : table_)
+        {
+            if (ts.attack && !ts.defend) return false;
+        }
+        return true;
+    }
+
+    auto GameImpl::Step() -> MoveOutcome
+    {
+        PlyrIdxT const actor = (phase_ == Phase::Defending) ? defender_idx_ : attacker_idx_;
+
+        auto snap{SnapshotFor(actor)};
+        auto deadline = std::chrono::steady_clock::now() + cfg_.turn_timeout;
+
+        PlayerAction const action = players_[actor]->Play(std::move(snap), deadline);
+
+        if (auto ok = rules_->Validate(*this, action); !ok.has_value())
+        {
+            return MoveOutcome::Invalid;
+        }
+        rules_->Apply(*this, action);
+        return rules_->Advance(*this);;
+    }
+
 
 }

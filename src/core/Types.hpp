@@ -57,6 +57,7 @@ namespace durak::core
     };
     inline auto operator==(Card const& a, Card const& b) ->bool { return a.suit == b.suit && a.rank == b.rank; }
     using CardSP = std::shared_ptr<Card>;
+    using CCardSP = std::shared_ptr<Card const>;
     using CardWP = std::weak_ptr<Card>;
 
     struct TableSlot
@@ -65,6 +66,15 @@ namespace durak::core
         CardSP defend;
     };
 
+    struct TableSlotView
+    {
+        CardWP attack;
+        CardWP defend;
+    };
+
+
+    using TableT = std::array<TableSlot, constants::MaxTableSlots>;
+    using TableViewT = std::array<TableSlotView, constants::MaxTableSlots>;
     struct Config
     {
         uint32_t n_players{2};
@@ -74,8 +84,6 @@ namespace durak::core
         uint64_t seed{std::random_device{}()};
         std::chrono::milliseconds turn_timeout{std::chrono::seconds(30ULL)};
     };
-
-    using TableT = std::array<TableSlot, constants::MaxTableSlots>;
     using PlyrIdxT = uint8_t;
 }
 

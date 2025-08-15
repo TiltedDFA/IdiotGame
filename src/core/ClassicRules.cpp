@@ -15,7 +15,7 @@ namespace durak::core
     }
     auto ClassicRules::Validate(GameImpl const& game, PlayerAction const& a) const -> CheckResult
     {
-        uint8_t const active_player = game.
+        // uint8_t const active_player = game.
     }
 
     auto ClassicRules::Apply(GameImpl& game, PlayerAction const& a) -> void

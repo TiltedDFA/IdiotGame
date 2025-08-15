@@ -20,7 +20,7 @@ namespace durak::core
         PlyrIdxT attacker_idx{}, defender_idx{};
         Phase   phase{Phase::Attacking};
 
-        TableT table{};
+        TableViewT table{};
 
         // for UI: reveal my hand, counts for others
         std::vector<CardWP> my_hand;
