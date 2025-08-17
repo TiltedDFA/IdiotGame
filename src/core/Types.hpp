@@ -55,7 +55,7 @@ namespace durak::core
         Card(Card const&) = delete;
         auto operator=(Card const&) -> Card& = delete;
     };
-    inline auto operator==(Card const& a, Card const& b) ->bool { return a.suit == b.suit && a.rank == b.rank; }
+    inline auto operator==(Card const& a, Card const& b) -> bool { return a.suit == b.suit && a.rank == b.rank; }
     using CardSP = std::shared_ptr<Card>;
     using CCardSP = std::shared_ptr<Card const>;
     using CardWP = std::weak_ptr<Card>;

@@ -12,13 +12,11 @@ namespace durak::core
 {
 
     // player should remove and give the cards to the table so SP
-    struct AttackAction   { std::vector<CardSP> cards; };
+    struct AttackAction   { std::vector<CardWP> cards; };
     struct DefendPair
     {
-        //doesn't own the card its defending
         CardWP attack;
-        //owns the card its defending with
-        CardSP defend;
+        CardWP defend;
     };
     struct DefendAction   { std::vector<DefendPair> pairs; };
     struct ThrowInAction  { std::vector<CardWP> cards; };

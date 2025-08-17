@@ -5,15 +5,32 @@
 #ifndef IDIOTGAME_UTIL_HPP
 #define IDIOTGAME_UTIL_HPP
 
+#include <algorithm>
+#include <span>
+#include <memory>
 #include "OmegaException.hpp"
 
 
 
-namespace durak::core
+namespace durak::core::util
 {
-    inline auto SameCard(Card const& a, Card const& b) -> bool
+    template <typename T>
+    inline auto any_invalid(std::span<T const> ptrs) -> bool
     {
-        return a.suit == b.suit && a.rank == b.rank;
+        if constexpr (std::is_same_v<T, std::weak_ptr<typename T::element_type>>)
+        {
+            // For weak_ptr: check if expired
+            return std::ranges::any_of(ptrs, [](auto const& p) { return p.expired(); });
+        }
+        else if constexpr (std::is_same_v<T, std::shared_ptr<typename T::element_type>>)
+        {
+            // For shared_ptr: check if null
+            return std::ranges::any_of(ptrs, [](auto const& p) { return !p; });
+        }
+        else
+        {
+            static_assert([]{return false;}(), "Ptr must be std::shared_ptr<T> or std::weak_ptr<T>");
+        }
     }
 }
 

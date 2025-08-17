@@ -200,11 +200,8 @@ namespace durak::core
 
     auto GameImpl::AllAttacksCovered() const -> bool
     {
-        for (auto const& ts : table_)
-        {
-            if (ts.attack && !ts.defend) return false;
-        }
-        return true;
+        return std::ranges::none_of(table_,
+            [](TableSlot const& ts) {return  ts.attack && !ts.defend;});
     }
 
     auto GameImpl::Step() -> MoveOutcome
@@ -212,11 +209,11 @@ namespace durak::core
         PlyrIdxT const actor = (phase_ == Phase::Defending) ? defender_idx_ : attacker_idx_;
 
         std::shared_ptr<GameSnapshot const> snap{SnapshotFor(actor)};
-        auto deadline = std::chrono::steady_clock::now() + cfg_.turn_timeout;
+        auto const deadline = std::chrono::steady_clock::now() + cfg_.turn_timeout;
 
         PlayerAction const action = players_[actor]->Play(std::move(snap), deadline);
 
-        if (auto ok = rules_->Validate(*this, action); !ok.has_value())
+        if (auto const ok = rules_->Validate(*this, action); !ok.has_value())
         {
             return MoveOutcome::Invalid;
         }

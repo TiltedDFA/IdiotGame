@@ -37,6 +37,7 @@ namespace durak::core
         auto Trump()    const noexcept      -> Suit    { return trump_;  }
         auto PlayerCount() const noexcept   -> size_t { return players_.size(); }
 
+        //allows class to directly access private data on an instance
         friend class ClassicRules;
 
         //returns nullptr if doesnt exist
