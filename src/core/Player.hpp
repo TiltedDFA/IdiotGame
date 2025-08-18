@@ -5,8 +5,8 @@
 #ifndef IDIOTGAME_PLAYER_HPP
 #define IDIOTGAME_PLAYER_HPP
 
-#include "actions.hpp"
-#include "state.hpp"
+#include "Actions.hpp"
+#include "State.hpp"
 
 namespace durak::core
 {

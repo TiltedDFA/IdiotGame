@@ -72,8 +72,18 @@ namespace durak::core
 
                 for (DefendPair const& p : act.pairs)
                 {
-                    if (!Beats(*p.defend.lock(), *p.attack.lock(), game.trump_))
+                    /*
+                     *!p.attack.lock() vs !p.attack.expired() is an interesting design question
+                     *From quick research !p.attack.lock() is prefered but heavier when threading
+                     * as a thread could destroy the object between the expired check and the lock
+                     * however for the purposes of this project, the authorative game state with power
+                     * to effect object lifetime should only ever run on 1 thread so will will use
+                     * the cheaper .expired() check.
+                     */
+                    if (!p.attack.expired() || !p.defend.expired())
                         return std::unexpected(r_e);
+
+                    //verify attack is on table and not covered
                     bool found = false;
                     for (TableSlot const& ts : game.table_)
                     {
@@ -85,6 +95,14 @@ namespace durak::core
                         break;
                     }
                     if (!found) return std::unexpected(r_e);
+
+                    //verify defender owns the defend card
+                    if (game.FindFromHand(game.defender_idx_, *p.defend.lock()).expired())
+                        return std::unexpected(r_e);
+
+                    //verify defending card beats attacking card
+                    if (!Beats(*p.defend.lock(), *p.attack.lock(), game.trump_))
+                        return std::unexpected(r_e);
                 }
 
                 return {};
@@ -102,6 +120,11 @@ namespace durak::core
                     return std::unexpected(r_e);
                 if (IsEmptyAttack(game.table_))
                     return std::unexpected(r_e);
+
+                // guard locks before deref
+                if (util::any_invalid(std::span{act.cards}))
+                    return std::unexpected(r_e);
+
                 for (CardWP const& c : act.cards)
                 {
                     if (!RanksMatchAnyOnTable(game.table_, c.lock()->rank))
@@ -151,14 +174,70 @@ namespace durak::core
                 {
                     for (DefendPair const& p : act.pairs)
                     {
-                        game.move
+                        game.MoveHandToTable(game.defender_idx_, p.attack, p.defend);
                     }
                 }
+                else if constexpr(std::is_same_v<T, ThrowInAction>)
+                {
+                    for (CardWP const& c : act.cards)
+                    {
+                        game.MoveHandToTable(game.attacker_idx_, c);
+                    }
+                }
+                else if constexpr (std::is_same_v<T, PassAction>)
+                {
+                    game.phase_ = Phase::Cleanup;
+                }
+                else if constexpr (std::is_same_v<T, TakeAction>)
+                {
+                    game.phase_ = Phase::Cleanup;
+                    game.defender_took_ = true;
+                }
+                else if constexpr (std::is_same_v<T, TransferAction>)
+                {
+                    ::durak::core::error::fail(::durak::core::error::Code::Rules, "Cannot transfer in classic");
+                }
+
             }, a);
     }
 
     auto ClassicRules::Advance(GameImpl& game) -> MoveOutcome
     {
+        using durak::core::error::Code;
+        if (game.phase_ == Phase::Attacking || Phase::Defending)
+            return MoveOutcome::Applied;
+
+        //clean up phase
+
+        if (game.defender_took_)
+        {
+            //defender took so cards already in hand and off table
+            game.RefillHands();
+            game.attacker_idx_ = game.NextSeat(game.defender_idx_);
+            game.defender_idx_ = game.NextSeat(game.attacker_idx_);
+        }
+        else
+        {
+            if (!game.AllAttacksCovered())
+                DRK_THROW(Code::State, "Cleanup reached without all attacks covered");
+
+            game.ClearTable();
+
+            game.RefillHands();
+
+            game.attacker_idx_ = game.defender_idx_;
+            game.defender_idx_ = game.NextSeat(game.defender_idx_);
+        }
+
+        game.phase_ = Phase::Attacking;
+        game.defender_took_ = false;
+
+        int with_cards = 0;
+        for (auto const& h : game.hands_)
+            with_cards += !h.empty();
+        if (with_cards == 1) return MoveOutcome::GameEnded;
+
+        return MoveOutcome::RoundEnded;
 
     }
 

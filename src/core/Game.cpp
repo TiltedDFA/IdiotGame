@@ -19,6 +19,7 @@ namespace durak::core
         DRK_ASSERT(players_.size() >= 2, "Less than 2 players while initalising core");
         BuildDeck();
         DRK_ASSERT(!deck_.empty(), "Empty deck after attempting init of deck in core");
+        trump_ = deck_.back()->suit;
         DealInitalHands();
         ChoseInitalRoles();
     }
