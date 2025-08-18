@@ -204,7 +204,7 @@ namespace durak::core
     auto ClassicRules::Advance(GameImpl& game) -> MoveOutcome
     {
         using durak::core::error::Code;
-        if (game.phase_ == Phase::Attacking || Phase::Defending)
+        if (game.phase_ == Phase::Attacking || game.phase_ == Phase::Defending)
             return MoveOutcome::Applied;
 
         //clean up phase

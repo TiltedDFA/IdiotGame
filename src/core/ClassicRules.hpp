@@ -14,7 +14,6 @@ namespace durak::core
         auto Validate(GameImpl const& game, PlayerAction const& a) const -> CheckResult override;
         auto Apply(GameImpl& game, PlayerAction const& a) -> void override;
         auto Advance(GameImpl& game) -> MoveOutcome override;
-    private:
         static bool Beats(Card const& a, Card const& b, Suit const trump);
     };
 

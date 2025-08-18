@@ -59,6 +59,7 @@ namespace durak::core
     using CardSP = std::shared_ptr<Card>;
     using CCardSP = std::shared_ptr<Card const>;
     using CardWP = std::weak_ptr<Card>;
+    using CCardWP = std::weak_ptr<Card const>;
 
     struct TableSlot
     {
