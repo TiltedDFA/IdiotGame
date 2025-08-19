@@ -34,6 +34,8 @@ namespace durak::core
         size_t const capacity_used = std::ranges::count_if(game.table_,
             [](TableSlot const& ts) {return static_cast<bool>(ts.attack);});
         size_t const capacity_free = constants::MaxTableSlots - capacity_used;
+        size_t constexpr cap = constants::MaxTableSlots;
+        size_t const def_hand = game.hands_[game.defender_idx_].size();
 
         ::durak::core::error::RuleViolation const r_e = ::durak::core::error::RuleViolation::All;
         return std::visit([&]<typename T0>(T0 const& act) -> CheckResult
@@ -41,6 +43,8 @@ namespace durak::core
             using T = std::decay_t<T0>;
             if constexpr (std::is_same_v<T, AttackAction>)
             {
+
+
                 if (game.phase_ != Phase::Attacking)
                     return std::unexpected(r_e);
                 if (actor != game.attacker_idx_)
@@ -51,6 +55,13 @@ namespace durak::core
                     return std::unexpected(r_e);
                 if (util::any_invalid(std::span{act.cards}))
                     return std::unexpected(r_e);
+
+                size_t const after = capacity_used + act.cards.size();
+                size_t const limit = std::min(cap, def_hand);
+
+                if (after > limit) return std::unexpected(r_e);
+
+
                 if (!IsEmptyAttack(game.table_))
                 {
                     for (CardWP const& c : act.cards)
@@ -123,6 +134,12 @@ namespace durak::core
 
                 // guard locks before deref
                 if (util::any_invalid(std::span{act.cards}))
+                    return std::unexpected(r_e);
+
+                size_t const after = capacity_used + act.cards.size();
+                size_t const limit = std::min(cap, def_hand);
+
+                if (after > limit)
                     return std::unexpected(r_e);
 
                 for (CardWP const& c : act.cards)
