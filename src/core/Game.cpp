@@ -6,7 +6,7 @@
 
 #include "Util.hpp"
 
-
+#include <utility>
 namespace durak::core
 {
     GameImpl::GameImpl(Config const& config,
@@ -92,7 +92,8 @@ namespace durak::core
         snap->defender_idx = defender_idx_;
         snap->phase = phase_;
 
-        snap->table = std::move(MakeViewTable(table_));
+        // snap->table = std::move(MakeViewTable(table_));
+        snap->table = MakeViewTable(table_);
         snap->my_hand = std::move(Shared_to_weak(hands_[seat]));
 
         for (auto const& hand : hands_)

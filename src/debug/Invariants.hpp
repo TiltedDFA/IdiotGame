@@ -58,7 +58,7 @@ namespace durak::core::debug
             bool const d = snd != nullptr;
             any_uncovered |= (a && !d);
         }
-        assert(any_uncovered && "Defender turn without uncovered attacks");
+        assert(!any_uncovered && "Defender turn without uncovered attacks");
     }
 
     // 4) Classic attack limit:

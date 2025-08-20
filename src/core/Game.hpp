@@ -55,6 +55,7 @@ namespace durak::core
 
         inline auto NextSeat(PlyrIdxT const idx) const -> PlyrIdxT { return static_cast<PlyrIdxT>((idx + 1) % players_.size()); }
         auto AllAttacksCovered() const -> bool;
+        auto PlayerAt(PlyrIdxT seat) -> Player* { return players_[seat].get(); }
     private:
         //Produces a shuffled deck
         auto BuildDeck() -> void;

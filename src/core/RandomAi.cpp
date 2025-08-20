@@ -93,7 +93,7 @@ namespace durak::core
 
         DRK_ASSERT(u_size <= h_size, "More attacks to cover than cards in hand breaks invariant");
 
-        std::vector<CCardSP> attacks(u_size);
+        std::vector<CCardSP> attacks{};
         for (size_t const idx : uncovered)
         {
             CardSP const c = s.table[idx].attack.lock();
@@ -107,7 +107,7 @@ namespace durak::core
             uint32_t mask{};
             for (size_t j{}; j < h_size; ++j)
             {
-                CCardSP const c = s.table[j].defend.lock();
+                CCardSP const c = s.my_hand[j].lock();
                 bool const ok = ClassicRules::Beats(*c, *attacks[k], s.trump);
                 mask |= (static_cast<uint32_t>(ok) << j);
             }

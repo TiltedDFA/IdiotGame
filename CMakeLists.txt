@@ -29,6 +29,7 @@ add_executable(IdiotGame
         src/debug/Invariants.hpp
         src/debug/AuditLogger.cpp
         src/debug/AuditLogger.hpp
+        src/debug/RecordingPlayer.hpp
 )
 
 add_executable(TestSelfPlay
@@ -51,6 +52,7 @@ add_executable(TestSelfPlay
         src/core/RandomAi.cpp
         src/core/RandomAi.hpp
         src/tests/selfplay.cpp
+        src/debug/RecordingPlayer.hpp
 )
 
 
@@ -60,6 +62,18 @@ if (MINGW)
     target_link_libraries(TestSelfPlay PRIVATE stdc++exp)
 endif()
 
-target_link_libraries(TestSelfPlay PRIVATE GTest::gtest_main)
+#find_library(LIBBACKTRACE NAMES backtrace
+#        HINTS /usr/lib/gcc/${CMAKE_LIBRARY_ARCHITECTURE}/* /usr/lib /usr/lib64)
+#
+#if (LIBBACKTRACE)
+#    target_link_libraries(TestSelfPlay PRIVATE ${LIBBACKTRACE})
+#    target_link_libraries(IdiotGame PRIVATE ${LIBBACKTRACE})
+#    # link any other targets that use std::stacktrace:
+#    # target_link_libraries(durak PRIVATE ${LIBBACKTRACE})
+#endif()
+
+target_link_libraries(IdiotGame   PRIVATE backtrace dl stdc++exp)
+
+target_link_libraries(TestSelfPlay PRIVATE GTest::gtest_main backtrace dl stdc++exp)
 include(GoogleTest)
 gtest_discover_tests(TestSelfPlay)

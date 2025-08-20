@@ -91,7 +91,7 @@ namespace durak::core
                      * to effect object lifetime should only ever run on 1 thread so will will use
                      * the cheaper .expired() check.
                      */
-                    if (!p.attack.expired() || !p.defend.expired())
+                    if (p.attack.expired() || p.defend.expired())
                         return std::unexpected(r_e);
 
                     //verify attack is on table and not covered
@@ -193,6 +193,8 @@ namespace durak::core
                     {
                         game.MoveHandToTable(game.defender_idx_, p.attack, p.defend);
                     }
+                    game.phase_ = Phase::Attacking;
+                    game.defender_took_ = false;
                 }
                 else if constexpr(std::is_same_v<T, ThrowInAction>)
                 {

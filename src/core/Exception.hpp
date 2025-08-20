@@ -8,6 +8,7 @@
 #include "OmegaException.hpp"
 
 #include <expected>
+#include <stdexcept>
 #include <format>
 // #if DRK_ALLOW_EXCEPTIONS == true
 // #define DRK_OOPS(msg,data) throw durak::core::OmegaException<decltype(data)>((msg),(data))
@@ -53,6 +54,7 @@ namespace durak::core::error
             case Code::Serialization:   throw SerializationError(std::move(msg), c);
             case Code::Assertion:       throw AssertionError(std::move(msg), c);
         }
+        throw std::runtime_error(msg);
     }
     //leaving it simple for now, can add more specific issues later
     enum class RuleViolation : uint8_t { All };
