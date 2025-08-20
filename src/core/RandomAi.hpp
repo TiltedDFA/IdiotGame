@@ -5,12 +5,12 @@
 #ifndef IDIOTGAME_RANDOMAI_HPP
 #define IDIOTGAME_RANDOMAI_HPP
 
-#include "../core/Player.hpp"
-#include "../core/ClassicRules.hpp"
-#include "../core/State.hpp"
-#include "../core/Types.hpp"
+#include "Player.hpp"
+#include "ClassicRules.hpp"
+#include "State.hpp"
+#include "Types.hpp"
 
-namespace durak::test
+namespace durak::core
 {
     class RandomAI final : public durak::core::Player
     {

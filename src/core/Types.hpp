@@ -6,6 +6,7 @@
 #define IDIOTGAME_TYPES_HPP
 
 #define DRK_ALLOW_EXCEPTIONS true
+#define DRK_ENABLE_TEST_HOOKS true
 
 #include <cstdint>
 #include <memory>

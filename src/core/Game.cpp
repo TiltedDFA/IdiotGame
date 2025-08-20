@@ -4,6 +4,8 @@
 #include "Game.hpp"
 #include <ranges>
 
+#include "Util.hpp"
+
 
 namespace durak::core
 {
@@ -17,6 +19,8 @@ namespace durak::core
     hands_(players_.size())
     {
         DRK_ASSERT(players_.size() >= 2, "Less than 2 players while initalising core");
+        DRK_ASSERT(!std::ranges::any_of(players_,
+            [](std::unique_ptr<Player> const& p) {return !p;}), "Invalid player in core");
         BuildDeck();
         DRK_ASSERT(!deck_.empty(), "Empty deck after attempting init of deck in core");
         trump_ = deck_.back()->suit;
@@ -159,8 +163,16 @@ namespace durak::core
 
     auto GameImpl::ClearTable() -> void
     {
-        auto reset_table_slot = [](TableSlot& ts) {ts.attack.reset(); ts.defend.reset();};
-        std::ranges::for_each(table_, reset_table_slot);
+        // auto reset_table_slot = [](TableSlot& ts) {ts.attack.reset(); ts.defend.reset();};
+        // std::ranges::for_each(table_, reset_table_slot);
+
+        for (auto& [attack, defend] : table_)
+        {
+            if (attack) discard_.push_back(std::move(attack));
+            if (defend) discard_.push_back(std::move(defend));
+            attack.reset();
+            defend.reset();
+        }
     }
 
     auto GameImpl::MoveTableToDefenderHand() -> void

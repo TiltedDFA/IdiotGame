@@ -7,9 +7,9 @@
 #include <ranges>
 #include <utility>
 
-#include "../core/Util.hpp"
+#include "Util.hpp"
 
-namespace durak::test
+namespace durak::core
 {
     RandomAI::RandomAI(uint64_t rng_seed):
         rng_(rng_seed) {}

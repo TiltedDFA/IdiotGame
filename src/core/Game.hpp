@@ -15,13 +15,13 @@
 #include "Rules.hpp"
 #include "Player.hpp"
 
+namespace durak::core::debug {struct Inspector;}
 namespace durak::core
 {
+    //forward declare
     class GameImpl
     {
     public:
-
-
         GameImpl() = delete;
         GameImpl(Config const& config,
                  std::unique_ptr<Rules> rules,
@@ -39,6 +39,7 @@ namespace durak::core
 
         //allows class to directly access private data on an instance
         friend class ClassicRules;
+        friend struct debug::Inspector;
 
         //returns nullptr if doesnt exist
         auto FindFromHand(PlyrIdxT const seat, Card const& c) const -> CardWP;
