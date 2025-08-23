@@ -32,6 +32,30 @@ namespace durak::core::util
             static_assert([]{return false;}(), "Ptr must be std::shared_ptr<T> or std::weak_ptr<T>");
         }
     }
+    inline auto CardToUID(Card const& c) -> uint64_t
+    {
+        return static_cast<uint64_t>(c.suit) * 13 + static_cast<uint64_t>(c.rank);
+    }
+    class CardUniqueChecker
+    {
+    public:
+        CardUniqueChecker():
+            cards_(0), contains_dup_(false) {}
+        auto Add(Card const& c) -> void
+        {
+            uint64_t const card = uint64_t{1} << CardToUID(c);
+            contains_dup_ |= static_cast<bool>(cards_ & card);
+            cards_ |= card;
+        }
+        [[nodiscard]]
+        auto ContainsDup() const -> bool
+        {
+            return contains_dup_;
+        }
+    private:
+        uint64_t cards_;
+        bool contains_dup_;
+    };
 }
 
 #endif //IDIOTGAME_UTIL_HPP

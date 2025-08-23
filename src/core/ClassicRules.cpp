@@ -60,16 +60,27 @@ namespace durak::core
                 size_t const limit = std::min(cap, def_hand);
 
                 if (after > limit) return std::unexpected(r_e);
+                util::CardUniqueChecker checker{};
 
+                bool const non_empty_table = !IsEmptyAttack(game.table_);
 
-                if (!IsEmptyAttack(game.table_))
+                for (CardWP const& w : act.cards)
                 {
-                    for (CardWP const& c : act.cards)
-                    {
-                        if (!RanksMatchAnyOnTable(game.table_, c.lock()->rank))
-                            return std::unexpected(r_e);
-                    }
+                    CCardSP const sp = w.lock();
+                    checker.Add(*sp);
+
+                    // NEW: must be in attacker hand (by value)
+                    if (game.FindFromHand(game.attacker_idx_, *sp).expired())
+                        return std::unexpected(r_e);
+
+                    // If table already has cards, ranks must match some rank on table
+                    if (non_empty_table && !RanksMatchAnyOnTable(game.table_, sp->rank))
+                        return std::unexpected(r_e);
                 }
+
+
+                if (checker.ContainsDup())
+                    return std::unexpected(r_e);
                 return {};
             }
             else if constexpr (std::is_same_v<T, DefendAction>)
@@ -81,40 +92,57 @@ namespace durak::core
                 if (act.pairs.empty())
                     return std::unexpected(r_e);
 
+                util::CardUniqueChecker checker{};
+                /*
+                      *!p.attack.lock() vs !p.attack.expired() is an interesting design question
+                      *From quick research !p.attack.lock() is prefered but heavier when threading
+                      * as a thread could destroy the object between the expired check and the lock
+                      * however for the purposes of this project, the authorative game state with power
+                      * to effect object lifetime should only ever run on 1 thread so will will use
+                      * the cheaper .expired() check.
+                */
                 for (DefendPair const& p : act.pairs)
                 {
-                    /*
-                     *!p.attack.lock() vs !p.attack.expired() is an interesting design question
-                     *From quick research !p.attack.lock() is prefered but heavier when threading
-                     * as a thread could destroy the object between the expired check and the lock
-                     * however for the purposes of this project, the authorative game state with power
-                     * to effect object lifetime should only ever run on 1 thread so will will use
-                     * the cheaper .expired() check.
-                     */
                     if (p.attack.expired() || p.defend.expired())
                         return std::unexpected(r_e);
 
-                    //verify attack is on table and not covered
+                    CCardSP const atk = p.attack.lock();
+                    CCardSP const d = p.defend.lock();
+
+                    checker.Add(*atk);
+                    checker.Add(*d);
+
+                    // verify attack is on table and not covered
                     bool found = false;
                     for (TableSlot const& ts : game.table_)
                     {
                         if (!ts.attack) continue;
-                        if (*ts.attack != *p.attack.lock()) continue;
+                        if (*ts.attack != *atk) continue;
                         if (static_cast<bool>(ts.defend))
                             return std::unexpected(r_e);
                         found = true;
                         break;
                     }
-                    if (!found) return std::unexpected(r_e);
-
-                    //verify defender owns the defend card
-                    if (game.FindFromHand(game.defender_idx_, *p.defend.lock()).expired())
+                    if (!found)
                         return std::unexpected(r_e);
 
-                    //verify defending card beats attacking card
-                    if (!Beats(*p.defend.lock(), *p.attack.lock(), game.trump_))
+                    // defender must own defend card
+                    if (game.FindFromHand(game.defender_idx_, *d).expired())
+                        return std::unexpected(r_e);
+
+                    // must beat
+                    if (!Beats(*d, *atk, game.trump_))
                         return std::unexpected(r_e);
                 }
+
+                if (checker.ContainsDup())
+                    return std::unexpected(r_e);
+
+                size_t const uncovered = std::ranges::count_if(game.table_,[](TableSlot const& ts)
+                    {return ts.attack && !ts.defend;});
+
+                if (uncovered != act.pairs.size())
+                    return std::unexpected(r_e);
 
                 return {};
             }
@@ -142,11 +170,23 @@ namespace durak::core
                 if (after > limit)
                     return std::unexpected(r_e);
 
+                util::CardUniqueChecker checker{};
+
+
                 for (CardWP const& c : act.cards)
                 {
-                    if (!RanksMatchAnyOnTable(game.table_, c.lock()->rank))
+                    CCardSP const sp = c.lock();
+                    checker.Add(*sp);
+
+                    if (game.FindFromHand(game.attacker_idx_, *sp).expired())
+                        return std::unexpected(r_e);
+
+                    if (!RanksMatchAnyOnTable(game.table_, sp->rank))
                         return std::unexpected(r_e);
                 }
+
+                if (checker.ContainsDup())
+                    return std::unexpected(r_e);
                 return {};
             }
             else if constexpr (std::is_same_v<T, TransferAction>)
@@ -158,6 +198,11 @@ namespace durak::core
                 if (game.phase_ != Phase::Attacking)
                     return std::unexpected(r_e);
                 if (actor != game.attacker_idx_)
+                    return std::unexpected(r_e);
+                if (IsEmptyAttack(game.table_))
+                    return std::unexpected(r_e);
+                if (std::ranges::count_if(game.table_, [](TableSlot const& ts)
+                    {return ts.attack && !ts.defend;}) != 0)
                     return std::unexpected(r_e);
                 return {};
             }
@@ -202,6 +247,8 @@ namespace durak::core
                     {
                         game.MoveHandToTable(game.attacker_idx_, c);
                     }
+                    game.phase_ = Phase::Defending;
+                    game.defender_took_ = false;
                 }
                 else if constexpr (std::is_same_v<T, PassAction>)
                 {
@@ -209,6 +256,7 @@ namespace durak::core
                 }
                 else if constexpr (std::is_same_v<T, TakeAction>)
                 {
+                    game.MoveTableToDefenderHand();
                     game.phase_ = Phase::Cleanup;
                     game.defender_took_ = true;
                 }

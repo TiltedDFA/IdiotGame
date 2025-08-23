@@ -19,7 +19,7 @@ namespace durak::core::debug
     // being able to ensure correct state for all components is a large priority
     inline auto CheckInvariants(GameImpl const& g) -> void
     {
-#if DRK_ENABLE_TEST_HOOKS == false
+#if !DRK_ENABLE_TEST_HOOKS
         (void)g;
 #else
       using namespace std;
@@ -58,7 +58,7 @@ namespace durak::core::debug
             bool const d = snd != nullptr;
             any_uncovered |= (a && !d);
         }
-        assert(!any_uncovered && "Defender turn without uncovered attacks");
+        assert(any_uncovered && "Defender turn without uncovered attacks");
     }
 
     // 4) Classic attack limit:
