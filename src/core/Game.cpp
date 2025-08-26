@@ -5,7 +5,7 @@
 #include <ranges>
 
 #include "Util.hpp"
-
+#include <print>
 #include <utility>
 namespace durak::core
 {
@@ -229,6 +229,7 @@ namespace durak::core
 
         if (auto const ok = rules_->Validate(*this, action); !ok.has_value())
         {
+            std::print("{}\n",durak::core::error::describe(ok.error()));
             return MoveOutcome::Invalid;
         }
         rules_->Apply(*this, action);

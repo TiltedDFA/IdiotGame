@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.31)
-project(IdiotGame)
+project(IdiotGame LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
+# ---------------- GTest ----------------
 include(FetchContent)
 FetchContent_Declare(
         googletest
@@ -11,69 +14,109 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(IdiotGame
-        src/core/OmegaException.hpp
-        src/main.cpp
-        src/core/Util.hpp
-        src/core/Types.hpp
-        src/core/Exception.hpp
-        src/core/Actions.hpp
-        src/core/State.hpp
-        src/core/Player.hpp
-        src/core/Rules.hpp
-        src/core/Game.hpp
-        src/core/ClassicRules.cpp
-        src/core/ClassicRules.hpp
-        src/core/Game.cpp
-        src/debug/Inspector.hpp
-        src/debug/Invariants.hpp
-        src/debug/AuditLogger.cpp
-        src/debug/AuditLogger.hpp
-        src/debug/RecordingPlayer.hpp
-)
+# ---------------- Common helpers ----------------
+function(set_target_warnings tgt)
+    if (MSVC)
+        target_compile_options(${tgt} PRIVATE /W4 /permissive-)
+    else()
+        target_compile_options(${tgt} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endfunction()
 
-add_executable(TestSelfPlay
-        src/core/OmegaException.hpp
-        src/core/Util.hpp
-        src/core/Types.hpp
-        src/core/Exception.hpp
+function(link_platform_bits tgt)
+    # Optional libbacktrace (Linux/others) for std::stacktrace pretty output
+    find_library(LIBBACKTRACE backtrace)
+    if (LIBBACKTRACE)
+        target_link_libraries(${tgt} PUBLIC ${LIBBACKTRACE})
+    endif()
+
+    # MinGW (GNU libstdc++) may need stdc++exp for <format>/<print>
+    if (MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_link_libraries(${tgt} PUBLIC stdc++exp)
+    endif()
+endfunction()
+
+# ---------------- Source lists (explicit for CLion) ----------------
+set(DURAK_CORE_HEADERS
         src/core/Actions.hpp
-        src/core/State.hpp
+        src/core/ClassicRules.hpp
+        src/core/Exception.hpp
+        src/core/Game.hpp
+        src/core/OmegaException.hpp
         src/core/Player.hpp
         src/core/Rules.hpp
-        src/core/Game.hpp
-        src/core/ClassicRules.cpp
-        src/core/ClassicRules.hpp
-        src/core/Game.cpp
-        src/debug/Inspector.hpp
-        src/debug/Invariants.hpp
-        src/debug/AuditLogger.cpp
-        src/debug/AuditLogger.hpp
-        src/core/RandomAi.cpp
+        src/core/State.hpp
+        src/core/Types.hpp
+        src/core/Util.hpp
         src/core/RandomAi.hpp
-        src/tests/selfplay.cpp
+)
+
+set(DURAK_CORE_SOURCES
+        src/core/ClassicRules.cpp
+        src/core/Game.cpp
+        src/core/RandomAi.cpp
+)
+
+set(DURAK_DEBUG_HEADERS
+        src/debug/AuditLogger.hpp
+        src/debug/Inspector.hpp
+        src/debug/Invariants.hpp
         src/debug/RecordingPlayer.hpp
 )
 
+set(DURAK_DEBUG_SOURCES
+        src/debug/AuditLogger.cpp
+)
 
-target_compile_options(IdiotGame PRIVATE -Wall -Wextra -pedantic -std=c++23)
-if (MINGW)
-    target_link_libraries(IdiotGame PRIVATE stdc++exp)
-    target_link_libraries(TestSelfPlay PRIVATE stdc++exp)
-endif()
+set(APP_SOURCES
+        src/main.cpp
+)
 
-#find_library(LIBBACKTRACE NAMES backtrace
-#        HINTS /usr/lib/gcc/${CMAKE_LIBRARY_ARCHITECTURE}/* /usr/lib /usr/lib64)
-#
-#if (LIBBACKTRACE)
-#    target_link_libraries(TestSelfPlay PRIVATE ${LIBBACKTRACE})
-#    target_link_libraries(IdiotGame PRIVATE ${LIBBACKTRACE})
-#    # link any other targets that use std::stacktrace:
-#    # target_link_libraries(durak PRIVATE ${LIBBACKTRACE})
-#endif()
+# ---------------- Libraries ----------------
+add_library(durak_core STATIC
+        ${DURAK_CORE_SOURCES}
+        ${DURAK_CORE_HEADERS}
+)
+target_include_directories(durak_core PUBLIC src)
+target_compile_features(durak_core PUBLIC cxx_std_23)
+set_target_warnings(durak_core)
+link_platform_bits(durak_core)
 
-target_link_libraries(IdiotGame   PRIVATE backtrace dl stdc++exp)
+add_library(durak_debug STATIC
+        ${DURAK_DEBUG_SOURCES}
+        ${DURAK_DEBUG_HEADERS}
+)
+target_include_directories(durak_debug PUBLIC src)
+target_link_libraries(durak_debug PUBLIC durak_core)
+target_compile_features(durak_debug PUBLIC cxx_std_23)
+set_target_warnings(durak_debug)
+link_platform_bits(durak_debug)
 
-target_link_libraries(TestSelfPlay PRIVATE GTest::gtest_main backtrace dl stdc++exp)
+# ---------------- App ----------------
+add_executable(IdiotGame ${APP_SOURCES})
+target_link_libraries(IdiotGame PRIVATE durak_core durak_debug)
+set_target_warnings(IdiotGame)
+
+# ---------------- Tests (explicit lists + one-liner helper) ----------------
 include(GoogleTest)
-gtest_discover_tests(TestSelfPlay)
+
+# Add your test source files here explicitly so CLion indexes them:
+set(DURAK_TEST_SOURCES
+        src/tests/selfplay.cpp
+        src/tests/selfplay_6p.cpp
+)
+
+function(durak_add_test test_name)
+    add_executable(${test_name} ${ARGN})
+    target_link_libraries(${test_name} PRIVATE durak_core durak_debug GTest::gtest_main)
+    target_include_directories(${test_name} PRIVATE src)
+    set_target_warnings(${test_name})
+    link_platform_bits(${test_name})
+    gtest_discover_tests(${test_name})
+endfunction()
+
+# One target per test source (clear in CLion, zero boilerplate elsewhere)
+foreach(TSRC IN LISTS DURAK_TEST_SOURCES)
+    get_filename_component(TNAME "${TSRC}" NAME_WE)
+    durak_add_test("test_${TNAME}" "${TSRC}")
+endforeach()

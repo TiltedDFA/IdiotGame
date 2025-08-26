@@ -6,6 +6,8 @@
 #include <string_view>
 #include <vector>
 
+#include "Inspector.hpp" // NEW
+
 using namespace durak::core;
 
 namespace
@@ -179,32 +181,40 @@ auto AuditLogger::start(GameImpl const& game, uint64_t seed) -> void
     out_.flush();
 }
 
-auto AuditLogger::turn(GameSnapshot const& s,
+auto AuditLogger::turn(GameImpl const& game,
+                       GameSnapshot const& s,
                        uint8_t actor,
                        PlayerAction const& a) -> void
 {
+    auto const snap = Inspector::Gather(game);
     out_ << std::format(
-        "Turn actor=P{} phase={} atk={} def={} table=[{}]\n",
+        "Turn actor=P{} phase={} atk={} def={} table=[{}] deck={} discard={}\n",
         static_cast<int>(actor),
         (s.phase == Phase::Attacking ? "A" : "D"),
         static_cast<int>(s.attacker_idx),
         static_cast<int>(s.defender_idx),
-        serialize_table(s)
+        serialize_table(s),
+        snap.deck.size(),
+        snap.discard.size()
     );
 
     out_ << std::format("Action: {}\n", s_action(a));
 }
 
-auto AuditLogger::turn(GameSnapshot const& s,
+auto AuditLogger::turn(GameImpl const& game,
+                       GameSnapshot const& s,
                        uint8_t actor) -> void
 {
+    auto const snap = Inspector::Gather(game);
     out_ << std::format(
-        "Turn actor=P{} phase={} atk={} def={} table=[{}]\n",
+        "Turn actor=P{} phase={} atk={} def={} table=[{}] deck={} discard={}\n",
         static_cast<int>(actor),
         (s.phase == Phase::Attacking ? "A" : "D"),
         static_cast<int>(s.attacker_idx),
         static_cast<int>(s.defender_idx),
-        serialize_table(s)
+        serialize_table(s),
+        snap.deck.size(),
+        snap.discard.size()
     );
 
     out_ << "Action: <omitted>\n";
@@ -234,7 +244,16 @@ auto AuditLogger::cleanup(GameImpl const& game) -> void
         );
     }
 
-    out_ << std::format("Cleanup: handsizes=[{}]\n", body);
+    auto const snap = Inspector::Gather(game);
+
+    out_ << std::format(
+        "Cleanup: handsizes=[{}] next_atk=P{} next_def=P{} deck={} discard={}\n",
+        body,
+        static_cast<int>(game.Attacker()),
+        static_cast<int>(game.Defender()),
+        snap.deck.size(),
+        snap.discard.size()
+    );
 }
 
 auto AuditLogger::end(GameImpl const& game) -> void
@@ -257,4 +276,4 @@ auto AuditLogger::flush() -> void
     out_.flush();
 }
 
-} // namespace durak::audit
+} // namespace durak::core::debug

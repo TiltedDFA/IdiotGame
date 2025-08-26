@@ -6,7 +6,6 @@
 #define IDIOTGAME_ACTIONS_HPP
 
 #include "Types.hpp"
-#include "Exception.hpp"
 
 namespace durak::core
 {

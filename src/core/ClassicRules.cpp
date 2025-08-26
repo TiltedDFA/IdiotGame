@@ -6,6 +6,13 @@
 
 #include "Game.hpp"
 #include "Util.hpp"
+namespace
+{
+    inline auto Viol(durak::core::error::RuleViolationCode code) -> durak::core::error::RuleViolation
+    {
+        return durak::core::error::RuleViolation{ .code = code };
+    }
+}
 
 namespace durak::core
 {
@@ -30,6 +37,7 @@ namespace durak::core
     }
     auto ClassicRules::Validate(GameImpl const& game, PlayerAction const& a) const -> CheckResult
     {
+        using RVC = ::durak::core::error::RuleViolationCode;
         PlyrIdxT const actor = (game.phase_ == Phase::Defending) ? game.defender_idx_ : game.attacker_idx_;
         size_t const capacity_used = std::ranges::count_if(game.table_,
             [](TableSlot const& ts) {return static_cast<bool>(ts.attack);});
@@ -37,7 +45,7 @@ namespace durak::core
         size_t constexpr cap = constants::MaxTableSlots;
         size_t const def_hand = game.hands_[game.defender_idx_].size();
 
-        ::durak::core::error::RuleViolation const r_e = ::durak::core::error::RuleViolation::All;
+        // ::durak::core::error::RuleViolation const r_e = ::durak::core::error::RuleViolation::All;
         return std::visit([&]<typename T0>(T0 const& act) -> CheckResult
         {
             using T = std::decay_t<T0>;
@@ -46,20 +54,34 @@ namespace durak::core
 
 
                 if (game.phase_ != Phase::Attacking)
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::WrongPhase_AttackingRequired).with_phase(game.phase_).with_actor(actor));
+
                 if (actor != game.attacker_idx_)
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::WrongActor_AttackerRequired).with_actor(actor).with_attacker(game.attacker_idx_));
+
                 if (act.cards.empty())
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Attack_Empty).with_phase(game.phase_).with_actor(actor));
+
                 if (act.cards.size() > capacity_free)
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Attack_TooManyForCapacity)
+                                           .with_actor(actor)
+                                           .with_phase(game.phase_)
+                                           .with_attempted(static_cast<std::uint8_t>(act.cards.size()))
+                                           .with_cap_free(static_cast<std::uint8_t>(capacity_free)));
+
                 if (util::any_invalid(std::span{act.cards}))
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Attack_PointersInvalid).with_actor(actor));
 
-                size_t const after = capacity_used + act.cards.size();
-                size_t const limit = std::min(cap, def_hand);
 
-                if (after > limit) return std::unexpected(r_e);
+                // size_t const after = capacity_used + ;
+                // size_t const limit = std::min(cap, );
+
+                if (act.cards.size() > def_hand)
+                    return std::unexpected(Viol(RVC::Attack_TooManyForCapacity)
+                                           .with_actor(actor)
+                                           // .with_cap_free(static_cast<std::uint8_t>(limit - capacity_used))
+                                           .with_attempted(static_cast<std::uint8_t>(act.cards.size()))
+                                           .with_def_hand(static_cast<std::uint8_t>(def_hand)));
                 util::CardUniqueChecker checker{};
 
                 bool const non_empty_table = !IsEmptyAttack(game.table_);
@@ -71,26 +93,29 @@ namespace durak::core
 
                     // NEW: must be in attacker hand (by value)
                     if (game.FindFromHand(game.attacker_idx_, *sp).expired())
-                        return std::unexpected(r_e);
+                        return std::unexpected(Viol(RVC::Attack_CardNotOwnedByAttacker).with_actor(actor));
 
                     // If table already has cards, ranks must match some rank on table
                     if (non_empty_table && !RanksMatchAnyOnTable(game.table_, sp->rank))
-                        return std::unexpected(r_e);
+                        return std::unexpected(Viol(RVC::Attack_RankNotOnTableWhenRequired)
+                                               .with_actor(actor).with_rank(sp->rank));
                 }
 
 
                 if (checker.ContainsDup())
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Attack_DuplicateCards).with_actor(actor));
                 return {};
             }
             else if constexpr (std::is_same_v<T, DefendAction>)
             {
                 if (game.phase_ != Phase::Defending)
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::WrongPhase_DefendingRequired).with_phase(game.phase_).with_actor(actor));
+
                 if (actor != game.defender_idx_)
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::WrongActor_DefenderRequired).with_actor(actor).with_defender(game.defender_idx_));
+
                 if (act.pairs.empty())
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Defend_Empty).with_actor(actor));
 
                 util::CardUniqueChecker checker{};
                 /*
@@ -104,7 +129,7 @@ namespace durak::core
                 for (DefendPair const& p : act.pairs)
                 {
                     if (p.attack.expired() || p.defend.expired())
-                        return std::unexpected(r_e);
+                        return std::unexpected(Viol(RVC::Defend_PointersInvalid).with_actor(actor));
 
                     CCardSP const atk = p.attack.lock();
                     CCardSP const d = p.defend.lock();
@@ -119,56 +144,65 @@ namespace durak::core
                         if (!ts.attack) continue;
                         if (*ts.attack != *atk) continue;
                         if (static_cast<bool>(ts.defend))
-                            return std::unexpected(r_e);
+                            return std::unexpected(Viol(RVC::Defend_AttackAlreadyCovered).with_actor(actor));
                         found = true;
                         break;
                     }
                     if (!found)
-                        return std::unexpected(r_e);
+                        return std::unexpected(Viol(RVC::Defend_AttackNotOnTable).with_actor(actor));
 
                     // defender must own defend card
                     if (game.FindFromHand(game.defender_idx_, *d).expired())
-                        return std::unexpected(r_e);
+                        return std::unexpected(Viol(RVC::Defend_CardNotOwnedByDefender).with_actor(actor));
 
                     // must beat
                     if (!Beats(*d, *atk, game.trump_))
-                        return std::unexpected(r_e);
+                        return std::unexpected(Viol(RVC::Defend_DoesNotBeat).with_actor(actor));
                 }
 
                 if (checker.ContainsDup())
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Defend_DuplicateCards).with_actor(actor));
 
-                size_t const uncovered = std::ranges::count_if(game.table_,[](TableSlot const& ts)
-                    {return ts.attack && !ts.defend;});
+                std::size_t const uncovered = std::ranges::count_if(
+                    game.table_, [](TableSlot const& ts){ return ts.attack && !ts.defend; });
 
                 if (uncovered != act.pairs.size())
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Defend_UncoveredPairsMismatch)
+                                           .with_actor(actor)
+                                           .with_attempted(static_cast<std::uint8_t>(act.pairs.size()))
+                                           .with_cap_used(static_cast<std::uint8_t>(uncovered)));
 
                 return {};
             }
             //should only occur after defence has called a pass
             else if constexpr (std::is_same_v<T, ThrowInAction>)
             {
-                if (game.phase_ != Phase::Attacking && game.phase_ != Phase::Defending)
-                    return std::unexpected(r_e);
-                if (actor != game.attacker_idx_)
-                    return std::unexpected(r_e);
-                if (act.cards.empty())
-                    return std::unexpected(r_e);
-                if (act.cards.size() > capacity_free)
-                    return std::unexpected(r_e);
-                if (IsEmptyAttack(game.table_))
-                    return std::unexpected(r_e);
+                if ((game.phase_ != Phase::Attacking && game.phase_ != Phase::Defending) || IsEmptyAttack(game.table_))
+                    return std::unexpected(Viol(RVC::ThrowIn_WrongPhaseOrEmptyTable).with_phase(game.phase_).with_actor(actor));
 
-                // guard locks before deref
+                if (actor != game.attacker_idx_)
+                    return std::unexpected(Viol(RVC::WrongActor_AttackerRequired).with_actor(actor).with_attacker(game.attacker_idx_));
+
+                if (act.cards.empty())
+                    return std::unexpected(Viol(RVC::ThrowIn_Empty).with_actor(actor));
+
+                if (act.cards.size() > capacity_free)
+                    return std::unexpected(Viol(RVC::ThrowIn_TooManyForCapacity)
+                                           .with_actor(actor)
+                                           .with_attempted(static_cast<std::uint8_t>(act.cards.size()))
+                                           .with_cap_free(static_cast<std::uint8_t>(capacity_free)));
+
                 if (util::any_invalid(std::span{act.cards}))
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::ThrowIn_PointersInvalid).with_actor(actor));
 
                 size_t const after = capacity_used + act.cards.size();
                 size_t const limit = std::min(cap, def_hand);
 
                 if (after > limit)
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::ThrowIn_TooManyForCapacity)
+                                                       .with_actor(actor)
+                                                       .with_attempted(static_cast<std::uint8_t>(act.cards.size()))
+                                                       .with_cap_free(static_cast<std::uint8_t>(limit - capacity_used)));
 
                 util::CardUniqueChecker checker{};
 
@@ -179,39 +213,43 @@ namespace durak::core
                     checker.Add(*sp);
 
                     if (game.FindFromHand(game.attacker_idx_, *sp).expired())
-                        return std::unexpected(r_e);
+                        return std::unexpected(Viol(RVC::ThrowIn_CardNotOwnedByAttacker).with_actor(actor));
 
                     if (!RanksMatchAnyOnTable(game.table_, sp->rank))
-                        return std::unexpected(r_e);
+                        return std::unexpected(Viol(RVC::ThrowIn_RankNotOnTable).with_actor(actor).with_rank(sp->rank));
                 }
 
                 if (checker.ContainsDup())
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::ThrowIn_DuplicateCards).with_actor(actor));
                 return {};
             }
             else if constexpr (std::is_same_v<T, TransferAction>)
             {
-                return std::unexpected(r_e);
+                return std::unexpected(Viol(RVC::Internal_Unreachable));
             }
             else if constexpr (std::is_same_v<T, PassAction>)
             {
                 if (game.phase_ != Phase::Attacking)
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Pass_WrongPhase).with_phase(game.phase_).with_actor(actor));
+
                 if (actor != game.attacker_idx_)
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Pass_NotAttacker).with_actor(actor).with_attacker(game.attacker_idx_));
+
                 if (IsEmptyAttack(game.table_))
-                    return std::unexpected(r_e);
-                if (std::ranges::count_if(game.table_, [](TableSlot const& ts)
-                    {return ts.attack && !ts.defend;}) != 0)
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Pass_TableEmpty).with_actor(actor));
+
+                if (std::ranges::count_if(game.table_, [](TableSlot const& ts){ return ts.attack && !ts.defend; }) != 0)
+                    return std::unexpected(Viol(RVC::Pass_UncoveredRemain).with_actor(actor));
                 return {};
             }
             else if constexpr (std::is_same_v<T, TakeAction>)
             {
                 if (game.phase_ != Phase::Defending)
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Take_WrongPhase).with_phase(game.phase_).with_actor(actor));
+
                 if (actor != game.defender_idx_)
-                    return std::unexpected(r_e);
+                    return std::unexpected(Viol(RVC::Take_NotDefender).with_actor(actor).with_defender(game.defender_idx_));
+
                 return {};
             }
             DRK_THROW(durak::core::error::Code::Unknown, "Should never reach this point");

@@ -24,26 +24,29 @@ namespace durak::core::debug
 
         AuditLogger(AuditLogger const&) = delete;
         auto operator=(AuditLogger const&) -> AuditLogger& = delete;
-        
+
         AuditLogger(AuditLogger&&) noexcept = default;
         auto operator=(AuditLogger&&) noexcept -> AuditLogger& = default;
 
         // Session header (seed, trump, player count)
         auto start(GameImpl const& game, std::uint64_t seed) -> void;
 
-        // Per turn (before Apply/Advance): snapshot, actor seat, proposed action (preferred)
-        auto turn(GameSnapshot const& s,
+        // Per turn (before Apply/Advance): snapshot, actor seat, proposed action
+        // NEW: include GameImpl to log deck/discard counts
+        auto turn(GameImpl const& game,
+                  GameSnapshot const& s,
                   std::uint8_t actor,
                   PlayerAction const& a) -> void;
 
-        // Per turn (fallback when action is unavailable in black-box tests)
-        auto turn(GameSnapshot const& s,
+        // Per turn (fallback when action is unavailable)
+        auto turn(GameImpl const& game,
+                  GameSnapshot const& s,
                   std::uint8_t actor) -> void;
 
         // Per step outcome (after Apply/Advance)
         auto outcome(MoveOutcome m) -> void;
 
-        // After a cleanup round, log all hand sizes by seat (via snapshots)
+        // After a cleanup round: log all hand sizes + next roles + deck/discard
         auto cleanup(GameImpl const& game) -> void;
 
         // Game end footer (loser seat; -1 if none)
