@@ -40,15 +40,25 @@ namespace durak::core
     auto RandomAI::AttackMove(GameSnapshot const& s) -> PlayerAction
     {
         DRK_ASSERT(!durak::core::util::any_invalid(std::span{s.my_hand}), "No cards in hand should be invalid");
-        bool empty = true;
+        if (s.my_hand.empty())
+            return PassAction{};
+
+
+        size_t used{};
         for (TableSlotView const& w : s.table)
         {
-            empty &= w.attack.expired();
+            used += !w.attack.expired();
         }
 
-        if (s.my_hand.empty()) return PassAction{};
+        size_t const def_hand = static_cast<size_t>(s.other_counts[s.defender_idx]);
+        size_t const cap = std::min(constants::MaxTableSlots, def_hand);
 
-        if (empty)
+        if (used >= cap)
+        {
+            return PassAction{};
+        }
+
+        if (used == 0)
         {
             return AttackAction{std::vector{s.my_hand[pick(s.my_hand)]}};
         }

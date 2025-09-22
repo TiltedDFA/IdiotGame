@@ -53,6 +53,8 @@ namespace durak::core
         //Uses the specific order for Durak
         auto RefillHands() -> void;
 
+        auto NextLivePlayer(PlyrIdxT from) const -> PlyrIdxT;
+
         inline auto NextSeat(PlyrIdxT const idx) const -> PlyrIdxT { return static_cast<PlyrIdxT>((idx + 1) % players_.size()); }
         auto AllAttacksCovered() const -> bool;
         auto PlayerAt(PlyrIdxT seat) -> Player* { return players_[seat].get(); }

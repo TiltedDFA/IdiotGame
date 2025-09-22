@@ -318,8 +318,8 @@ namespace durak::core
         {
             //defender took so cards already in hand and off table
             game.RefillHands();
-            game.attacker_idx_ = game.NextSeat(game.defender_idx_);
-            game.defender_idx_ = game.NextSeat(game.attacker_idx_);
+            game.attacker_idx_ = game.NextLivePlayer(game.defender_idx_);
+            game.defender_idx_ = game.NextLivePlayer(game.attacker_idx_);
         }
         else
         {
@@ -330,8 +330,10 @@ namespace durak::core
 
             game.RefillHands();
 
-            game.attacker_idx_ = game.defender_idx_;
-            game.defender_idx_ = game.NextSeat(game.defender_idx_);
+            game.attacker_idx_ =    game.hands_[game.defender_idx_].empty() ?
+                                    game.NextLivePlayer(game.defender_idx_) :
+                                    game.defender_idx_;
+            game.defender_idx_ = game.NextLivePlayer(game.attacker_idx_);
         }
 
         game.phase_ = Phase::Attacking;

@@ -53,7 +53,7 @@ TEST(SelfPlay6P, Transcripts_And_End)
     fs::create_directories("_artifacts");
     try
     {
-        for (std::uint64_t seed : {111ull, 222ull})
+        for (std::uint64_t seed : {111ull, 222ull, 333ull})
         {
             auto game = make_game(seed, 6);
             durak::core::debug::AuditLogger log(std::format("_artifacts/game6p_{}.log", seed));

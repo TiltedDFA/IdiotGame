@@ -212,6 +212,18 @@ namespace durak::core
         }
     }
 
+    auto GameImpl::NextLivePlayer(PlyrIdxT const from) const -> PlyrIdxT
+    {
+        PlyrIdxT i{from};
+        size_t const n = players_.size();
+        for (size_t j{}; j < n; ++j)
+        {
+            i = NextSeat(i);
+            if (!hands_[i].empty()) return i;
+        }
+        DRK_THROW(durak::core::error::Code::State, "No live players");
+    }
+
     auto GameImpl::AllAttacksCovered() const -> bool
     {
         return std::ranges::none_of(table_,
