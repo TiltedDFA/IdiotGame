@@ -14,6 +14,7 @@
 #include "State.hpp"
 #include "Rules.hpp"
 #include "Player.hpp"
+#include "Judge.hpp"
 
 namespace durak::core::debug {struct Inspector;}
 namespace durak::core
@@ -40,6 +41,7 @@ namespace durak::core
         //allows class to directly access private data on an instance
         friend class ClassicRules;
         friend struct debug::Inspector;
+        friend class Judge;
 
         //returns nullptr if doesnt exist
         auto FindFromHand(PlyrIdxT const seat, Card const& c) const -> CardWP;
@@ -68,6 +70,7 @@ namespace durak::core
         std::unique_ptr<Rules> rules_;
         std::vector<std::unique_ptr<Player>> players_;
         std::mt19937_64 rng_;
+        std::shared_ptr<Judge> judge_;
 
         // Authoritative state
         std::vector<std::vector<CardSP>> hands_;             // [seat] owns cards in hand

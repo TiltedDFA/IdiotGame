@@ -16,6 +16,7 @@ namespace durak::core
     rules_(std::move(rules)),
     players_(std::move(players)),
     rng_{cfg_.seed},
+    judge_(std::make_shared<Judge>()),
     hands_(players_.size())
     {
         DRK_ASSERT(players_.size() >= 2, "Less than 2 players while initalising core");
@@ -234,10 +235,12 @@ namespace durak::core
     {
         PlyrIdxT const actor = (phase_ == Phase::Defending) ? defender_idx_ : attacker_idx_;
 
-        std::shared_ptr<GameSnapshot const> snap{SnapshotFor(actor)};
-        auto const deadline = std::chrono::steady_clock::now() + cfg_.turn_timeout;
-
-        PlayerAction const action = players_[actor]->Play(std::move(snap), deadline);
+        // std::shared_ptr<GameSnapshot const> snap{SnapshotFor(actor)};
+        // auto const deadline = std::chrono::steady_clock::now() + cfg_.turn_timeout;
+        //
+        // PlayerAction const action = players_[actor]->Play(std::move(snap), deadline);
+        TimedDecision const dec = judge_->GetAction(*this, actor);
+        PlayerAction const action = dec.action;
 
         if (auto const ok = rules_->Validate(*this, action); !ok.has_value())
         {

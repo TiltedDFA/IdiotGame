@@ -49,12 +49,14 @@ set(DURAK_CORE_HEADERS
         src/core/Types.hpp
         src/core/Util.hpp
         src/core/RandomAi.hpp
+        src/core/Judge.hpp
 )
 
 set(DURAK_CORE_SOURCES
         src/core/ClassicRules.cpp
         src/core/Game.cpp
         src/core/RandomAi.cpp
+        src/core/Judge.cpp
 )
 
 set(DURAK_DEBUG_HEADERS
