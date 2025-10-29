@@ -25,6 +25,10 @@ namespace durak::core
         // for UI: reveal my hand, counts for others
         std::vector<CardWP> my_hand;
         std::vector<uint8_t> other_counts;
+
+        uint8_t bout_cap{};
+        uint8_t attacks_used{};
+        bool defender_took{false};
     };
 
 } // namespace durak::core

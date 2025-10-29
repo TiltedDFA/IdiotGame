@@ -18,13 +18,12 @@ namespace durak::core
         CardWP defend;
     };
     struct DefendAction   { std::vector<DefendPair> pairs; };
-    struct ThrowInAction  { std::vector<CardWP> cards; };
     struct TransferAction { CardWP card; };
     struct PassAction     {};
     struct TakeAction     {};
 
     using PlayerAction = std::variant<
-      AttackAction, DefendAction, ThrowInAction, TransferAction, PassAction, TakeAction>;
+      AttackAction, DefendAction, TransferAction, PassAction, TakeAction>;
 
     enum class MoveOutcome : uint8_t
     {

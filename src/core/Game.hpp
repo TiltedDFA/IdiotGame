@@ -65,6 +65,7 @@ namespace durak::core
         auto BuildDeck() -> void;
         auto DealInitalHands() -> void;
         auto ChoseInitalRoles() -> void;
+
     private:
         Config cfg_;
         std::unique_ptr<Rules> rules_;
@@ -83,6 +84,7 @@ namespace durak::core
         uint8_t attacker_idx_{0}, defender_idx_{1};
         Phase   phase_{Phase::Attacking};
         bool    defender_took_{false}; // set by Apply(Take)
+        uint8_t bout_cap_{constants::MaxTableSlots};
     };
 }
 #endif //IDIOTGAME_GAME_HPP

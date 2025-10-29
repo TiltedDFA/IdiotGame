@@ -90,28 +90,6 @@ auto s_action(PlayerAction const& a) -> std::string
                 }
                 return std::format("Defend{{{}}}", body);
             }
-            else if constexpr (std::is_same_v<T, ThrowInAction>)
-            {
-                std::vector<std::string> parts;
-                parts.reserve(act.cards.size());
-
-                for (CardWP const& w : act.cards)
-                {
-                    auto const sp = w.lock();
-                    if (sp)
-                    {
-                        parts.emplace_back(s_card(*sp));
-                    }
-                }
-
-                std::string body;
-                for (size_t i{}; i < parts.size(); ++i)
-                {
-                    body += (i ? "," : "");
-                    body += parts[i];
-                }
-                return std::format("ThrowIn[{}]", body);
-            }
             else if constexpr (std::is_same_v<T, TransferAction>)
             {
                 if (auto const sp = act.card.lock())

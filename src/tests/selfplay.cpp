@@ -49,7 +49,7 @@ TEST(SelfPlay, Transcripts_And_End)
     fs::create_directories("_artifacts");
     try
     {
-        for (std::uint64_t seed : {111ull, 222ull, 333ull})
+        for (std::uint64_t seed : {111ull, 222ull, 333ull, 1ull, 23ull, 44ull})
         {
             auto game = make_game(seed);
             durak::core::debug::AuditLogger log(std::format("_artifacts/game_{}.log", seed));
@@ -96,6 +96,6 @@ TEST(SelfPlay, Transcripts_And_End)
     }
     catch (durak::core::OmegaException<durak::core::error::Code> const& e)
     {
-        std::print("{}", e.to_str());
+        std::print("error:{}", e.to_str());
     }
 }

@@ -101,7 +101,13 @@ namespace durak::core
         {
             snap->other_counts.push_back(hand.size());
         }
-        //not setting deadline yet
+        auto used = static_cast<uint8_t>(
+            std::ranges::count_if(table_, [](auto const& ts){ return static_cast<bool>(ts.attack); })
+        );
+        snap->bout_cap      = bout_cap_;
+        snap->attacks_used  = used;
+        snap->defender_took = defender_took_;
+
         return snap;
     }
 

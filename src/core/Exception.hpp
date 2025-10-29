@@ -88,15 +88,6 @@ namespace durak::core::error
         Defend_DuplicateCards,
         Defend_UncoveredPairsMismatch, // uncovered != pairs.size()
 
-        // Throw-in
-        ThrowIn_WrongPhaseOrEmptyTable,
-        ThrowIn_Empty,
-        ThrowIn_TooManyForCapacity,
-        ThrowIn_PointersInvalid,
-        ThrowIn_RankNotOnTable,
-        ThrowIn_CardNotOwnedByAttacker,
-        ThrowIn_DuplicateCards,
-
         // Pass
         Pass_WrongPhase,
         Pass_NotAttacker,
@@ -169,15 +160,6 @@ namespace durak::core::error
             case E::Defend_DoesNotBeat:                  return "Defend: defending card does not beat attack";
             case E::Defend_DuplicateCards:               return "Defend: duplicate cards in action";
             case E::Defend_UncoveredPairsMismatch:       return "Defend: uncovered count != pairs.size()";
-
-            // Throw-in
-            case E::ThrowIn_WrongPhaseOrEmptyTable:      return "Throw-in: wrong phase or empty table";
-            case E::ThrowIn_Empty:                       return "Throw-in: empty card list";
-            case E::ThrowIn_TooManyForCapacity:          return "Throw-in: exceeds capacity";
-            case E::ThrowIn_PointersInvalid:             return "Throw-in: invalid/expired card reference";
-            case E::ThrowIn_RankNotOnTable:              return "Throw-in: rank not present on table";
-            case E::ThrowIn_CardNotOwnedByAttacker:      return "Throw-in: card not owned by attacker";
-            case E::ThrowIn_DuplicateCards:              return "Throw-in: duplicate cards in action";
 
             // Pass/Take
             case E::Pass_WrongPhase:                     return "Pass: wrong phase";

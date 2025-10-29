@@ -3,11 +3,13 @@
 //
 
 #include "RandomAi.hpp"
+#include "Util.hpp"
+
+#include <bit>
 #include <random>
 #include <ranges>
 #include <utility>
 
-#include "Util.hpp"
 
 namespace durak::core
 {
