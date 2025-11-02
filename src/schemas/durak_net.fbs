@@ -1,0 +1,86 @@
+namespace durak.gen.net;
+
+enum Phase:ubyte { Attacking, Defending, Cleanup }
+enum Suit :ubyte { Hearts, Diamonds, Clubs, Spades }
+enum Rank :ubyte { Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace }
+
+table Card { suit:Suit; rank:Rank; }
+table TableSlot { attack:Card; defend:Card; }
+
+table SeatView {
+  schema_version:uint16;
+  seat:ubyte;
+  n_players:ubyte;          // NEW: explicit (2..6)
+
+  trump:Suit;
+  attacker_idx:ubyte;
+  defender_idx:ubyte;
+  phase:Phase;
+
+  table:[TableSlot];        // 0..6
+  my_hand:[Card];           // only my visible cards
+  other_counts:[ubyte];     // length == n_players
+
+  bout_cap:ubyte;
+  attacks_used:ubyte;
+  defender_took:bool;
+}
+
+/**************
+ * Client → Server
+ **************/
+table Action_Attack { actor:ubyte; cards:[Card]; }
+table ActionPair { attack:Card; defend:Card; }
+table Action_Defend { actor:ubyte; pairs:[ActionPair]; }
+table Action_Pass   { actor:ubyte; }
+table Action_Take   { actor:ubyte; }
+union Action { Action_Attack, Action_Defend, Action_Pass, Action_Take }
+
+table PlayerActionMsg {
+  msg_id:uint64;
+  action:Action;
+}
+
+/**************
+ * Server → Client
+ **************/
+table SnapshotMsg {         // broadcast after every state change (and at connect)
+  msg_id:uint64;
+  view:SeatView;
+}
+
+table DecisionRequest {     // sent only to current actor
+  msg_id:uint64;
+  actor:ubyte;
+  deadline_epoch_ms:uint64; // UTC ms since epoch
+}
+
+table Violation {           // response to a rejected action
+  msg_id:uint64;
+  code:int16;               // mirrors RuleViolationCode
+  text:string;              // compact describe()
+}
+
+table ServerHello {         // first packet after connect (optional but nice)
+  msg_id:uint64;
+  schema_version:uint16;
+}
+
+table GameOver {            // explicit end-of-game banner
+  msg_id:uint64;
+  loser:ubyte;              // -1 not needed; server knows seats
+  winners:[ubyte];          // usually [otherSeat] in 2p; supports 2–6
+  ranking:[ubyte];          // optional full order; length==n_players
+  reason:string;            // "deck empty & one seat left", etc.
+}
+
+/**************
+ * Envelope
+ **************/
+union Message {
+  PlayerActionMsg, SnapshotMsg, DecisionRequest,
+  Violation, ServerHello, GameOver
+}
+
+table Envelope { message:Message; }
+root_type Envelope;

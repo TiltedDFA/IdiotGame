@@ -19,6 +19,7 @@
 namespace durak::core::constants
 {
     inline constexpr size_t MaxTableSlots = 6;
+    inline constexpr size_t MaxPlayers = 6;
 }
 namespace durak::core
 {
