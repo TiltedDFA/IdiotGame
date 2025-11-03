@@ -12,7 +12,7 @@ namespace durak::net
     RemotePlayer::RemotePlayer(durak::core::PlyrIdxT seat,
                                std::shared_ptr<SeatChannel> chan)
         : seat_{seat}
-    , chan_{std::move(chan)}
+          , chan_{std::move(chan)}
     {
     }
 

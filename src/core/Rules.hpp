@@ -29,7 +29,6 @@ namespace durak::core
         virtual auto Apply(GameImpl& game, PlayerAction const& a) -> void = 0;
 
         virtual auto Advance(GameImpl& game) -> MoveOutcome = 0;
-
     };
 }
 

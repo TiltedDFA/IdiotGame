@@ -18,29 +18,29 @@ using namespace durak::core;
 
 namespace
 {
-auto make_players(uint64_t seed) -> std::vector<std::unique_ptr<Player>>
-{
-    std::vector<std::unique_ptr<Player>> ps;
-    ps.emplace_back(std::make_unique<RandomAI>(seed + 1));
-    ps.emplace_back(std::make_unique<RandomAI>(seed + 2));
-    return ps;
-}
-auto make_game(std::uint64_t seed) -> GameImpl
-{
-    Config cfg{
-        .n_players    = 2,
-        .deal_up_to   = 6,
-        .deck36       = true,
-        .seed         = seed,
-        .turn_timeout = std::chrono::seconds(2u)
-    };
+    auto make_players(uint64_t seed) -> std::vector<std::unique_ptr<Player>>
+    {
+        std::vector<std::unique_ptr<Player>> ps;
+        ps.emplace_back(std::make_unique<RandomAI>(seed + 1));
+        ps.emplace_back(std::make_unique<RandomAI>(seed + 2));
+        return ps;
+    }
 
-    auto ps = make_players(seed);
-    ps = durak::core::debug::WrapRecording(ps);
+    auto make_game(std::uint64_t seed) -> GameImpl
+    {
+        Config cfg{
+            .n_players = 2,
+            .deal_up_to = 6,
+            .deck36 = true,
+            .seed = seed,
+            .turn_timeout = std::chrono::seconds(2u)
+        };
 
-    return GameImpl(cfg, std::make_unique<ClassicRules>(), std::move(ps));
-}
+        auto ps = make_players(seed);
+        ps = durak::core::debug::WrapRecording(ps);
 
+        return GameImpl(cfg, std::make_unique<ClassicRules>(), std::move(ps));
+    }
 } // anonymous namespace
 
 TEST(SelfPlay, Transcripts_And_End)

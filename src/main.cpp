@@ -33,14 +33,14 @@
 namespace
 {
     using WsServer = websocketpp::server<websocketpp::config::asio>;
-    using Hdl      = websocketpp::connection_hdl;
+    using Hdl = websocketpp::connection_hdl;
 
     struct ServerConfig
     {
         std::uint16_t port{9002};
         std::uint32_t n_players{2};
-        bool          deck36{true};
-        std::uint8_t  deal_up_to{6};
+        bool deck36{true};
+        std::uint8_t deal_up_to{6};
         std::uint64_t seed{123456789ULL};
         std::chrono::milliseconds turn_timeout{std::chrono::seconds(15)};
     };
@@ -102,7 +102,7 @@ namespace
         for (durak::core::PlyrIdxT seat = 0; seat < chans.size(); ++seat)
         {
             auto const buf = durak::core::net::BuildSnapshot(game, seat, msg_id);
-            std::span<uint8_t const> bytes{ buf.data(), buf.size() };
+            std::span<uint8_t const> bytes{buf.data(), buf.size()};
             std::span<std::byte const> b{
                 reinterpret_cast<std::byte const*>(bytes.data()), bytes.size()
             };
@@ -167,7 +167,7 @@ int main(int argc, char** argv)
         std::print("[idiotd] client connected -> seat {}\n", seat);
 
         std::string hello = "SeatAssigned " + std::to_string(seat) +
-                            " / " + std::to_string(chans.size());
+            " / " + std::to_string(chans.size());
         websocketpp::lib::error_code ec;
         ep->send(hdl, hello, websocketpp::frame::opcode::text, ec);
     });
@@ -225,10 +225,10 @@ int main(int argc, char** argv)
     });
 
     Config cfg;
-    cfg.n_players    = sc.n_players;
-    cfg.deal_up_to   = sc.deal_up_to;
-    cfg.deck36       = sc.deck36;
-    cfg.seed         = sc.seed;
+    cfg.n_players = sc.n_players;
+    cfg.deal_up_to = sc.deal_up_to;
+    cfg.deck36 = sc.deck36;
+    cfg.seed = sc.seed;
     cfg.turn_timeout = sc.turn_timeout;
 
     auto rules = std::make_unique<ClassicRules>();

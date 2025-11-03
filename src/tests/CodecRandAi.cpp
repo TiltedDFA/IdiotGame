@@ -291,7 +291,7 @@ TEST(Codec_RandomAI, Decode_Defend_FromLiveDefendingSnapshot)
     }
 
     ASSERT_TRUE(validated_one) <<
- "Could not locate a defendable uncovered attack within search budget; try adjusting seeds or steps.";
+        "Could not locate a defendable uncovered attack within search budget; try adjusting seeds or steps.";
 }
 
 TEST(Codec_RandomAI, EncodeDecode_Pass_Take_FromLiveSnapshots)

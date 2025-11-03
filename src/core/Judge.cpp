@@ -15,7 +15,9 @@ namespace durak::core
     static auto TableHasAnyAttack(GameSnapshot const& s) -> bool
     {
         return std::ranges::any_of(s.table, [](TableSlotView const& ts)
-            {return !ts.attack.expired();});
+        {
+            return !ts.attack.expired();
+        });
     }
 
     static auto MakeDefaultAttack(GameSnapshot const& s) -> PlayerAction
@@ -40,7 +42,8 @@ namespace durak::core
             }
             auto lhs = std::to_underlying(sp->rank);
             auto rhs = std::to_underlying(best_sp->rank);
-            bool const better = (lhs < rhs) || (lhs == rhs && std::to_underlying(sp->suit) < std::to_underlying(best_sp->suit));
+            bool const better = (lhs < rhs) || (lhs == rhs && std::to_underlying(sp->suit) < std::to_underlying(
+                best_sp->suit));
             if (better)
             {
                 best = c;
@@ -48,8 +51,10 @@ namespace durak::core
             }
         }
         if (!best_sp) [[unlikely]]
-        {DRK_THROW(durak::core::error::Code::State, "Best did not exist at return time");};
-        return AttackAction{ std::vector<CardWP>{best}};
+        {
+            DRK_THROW(durak::core::error::Code::State, "Best did not exist at return time");
+        };
+        return AttackAction{std::vector<CardWP>{best}};
     }
 
     auto Judge::GetAction(GameImpl& game, PlyrIdxT actor) const -> TimedDecision
@@ -57,10 +62,10 @@ namespace durak::core
         std::shared_ptr<const GameSnapshot> snap = game.SnapshotFor(actor);
         auto const deadline = std::chrono::steady_clock::now() + game.cfg_.turn_timeout;
 
-        std::packaged_task<PlayerAction()> task(
+        std::packaged_task < PlayerAction() > task(
             [p = game.PlayerAt(actor),
-             snp = std::move(snap),
-             deadline]() mutable
+                snp = std::move(snap),
+                deadline]() mutable
             {
                 return p->Play(std::move(snp), deadline);
             }
@@ -91,5 +96,4 @@ namespace durak::core
         res.action = table_has_attacks ? PlayerAction{PassAction{}} : MakeDefaultAttack(*s_now);
         return res;
     }
-
 }

@@ -16,11 +16,13 @@
 #include <chrono>
 #include <random>
 #include <variant>
+
 namespace durak::core::constants
 {
     inline constexpr size_t MaxTableSlots = 6;
     inline constexpr size_t MaxPlayers = 6;
 }
+
 namespace durak::core
 {
     enum class Suit : uint8_t
@@ -30,6 +32,7 @@ namespace durak::core
         Clubs,
         Spades
     };
+
     enum class Rank : uint8_t
     {
         Two = 0,
@@ -46,10 +49,14 @@ namespace durak::core
         King,
         Ace
     };
+
     struct Card
     {
         Card() = delete;
-        Card(Suit suit, Rank rank) : suit(suit), rank(rank) {}
+
+        Card(Suit suit, Rank rank) : suit(suit), rank(rank)
+        {
+        }
 
         Suit suit;
         Rank rank;
@@ -57,6 +64,7 @@ namespace durak::core
         Card(Card const&) = delete;
         auto operator=(Card const&) -> Card& = delete;
     };
+
     inline auto operator==(Card const& a, Card const& b) -> bool { return a.suit == b.suit && a.rank == b.rank; }
     using CardSP = std::shared_ptr<Card>;
     using CCardSP = std::shared_ptr<Card const>;
@@ -78,15 +86,17 @@ namespace durak::core
 
     using TableT = std::array<TableSlot, constants::MaxTableSlots>;
     using TableViewT = std::array<TableSlotView, constants::MaxTableSlots>;
+
     struct Config
     {
         uint32_t n_players{2};
-        uint8_t  deal_up_to{6};
+        uint8_t deal_up_to{6};
         // true = 36-card (Six..Ace), false = 52-card
-        bool     deck36{true};
+        bool deck36{true};
         uint64_t seed{std::random_device{}()};
         std::chrono::milliseconds turn_timeout{std::chrono::seconds(30ULL)};
     };
+
     using PlyrIdxT = uint8_t;
 }
 

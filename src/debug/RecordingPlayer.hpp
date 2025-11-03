@@ -13,7 +13,6 @@
 
 namespace durak::core::debug
 {
-
     class RecordingPlayer final : public Player
     {
     public:
@@ -66,7 +65,6 @@ namespace durak::core::debug
     {
         return dynamic_cast<RecordingPlayer*>(p);
     }
-
 } // namespace durak::core::debug
 
 #endif //IDIOTGAME_RECORDINGPLAYER_HPP

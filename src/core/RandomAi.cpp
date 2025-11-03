@@ -13,8 +13,10 @@
 
 namespace durak::core
 {
-    RandomAI::RandomAI(uint64_t rng_seed):
-        rng_(rng_seed) {}
+    RandomAI::RandomAI(uint64_t rng_seed) :
+        rng_(rng_seed)
+    {
+    }
 
     using namespace durak::core;
 
@@ -190,9 +192,6 @@ namespace durak::core
             DRK_ASSERT(chosen, "Random sampling failed despite positive total count");
         }
 
-        return DefendAction{ std::move(pairs) };
+        return DefendAction{std::move(pairs)};
     }
-
-
-
 }

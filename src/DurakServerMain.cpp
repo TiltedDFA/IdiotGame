@@ -56,7 +56,7 @@ namespace
         }
 
         // Pop a frame until absolute deadline; returns false on timeout.
-        bool pop_until(std::chrono::steady_clock::time_point deadline, Frame &out)
+        bool pop_until(std::chrono::steady_clock::time_point deadline, Frame& out)
         {
             std::unique_lock<std::mutex> lock(m_);
             while (q_.empty())
@@ -72,7 +72,7 @@ namespace
         }
 
         // Non-blocking pop (for drains / close)
-        bool try_pop(Frame &out)
+        bool try_pop(Frame& out)
         {
             std::lock_guard<std::mutex> lock(m_);
             if (q_.empty())
@@ -95,15 +95,15 @@ namespace
     class WsRemotePlayer final : public durak::core::Player
     {
     public:
-        using SendFn = std::function<void(const std::uint8_t*, std::size_t)>;
+        using SendFn = std::function<void(const std::uint8_t *, std::size_t)>;
 
         WsRemotePlayer(durak::core::PlyrIdxT seat,
                        std::shared_ptr<InboundQueue> inbox,
                        SendFn send)
-        : seat_(seat)
-        , inbox_(std::move(inbox))
-        , send_(std::move(send))
-        , next_msg_id_(1ULL)
+            : seat_(seat)
+              , inbox_(std::move(inbox))
+              , send_(std::move(send))
+              , next_msg_id_(1ULL)
         {
         }
 
@@ -115,7 +115,7 @@ namespace
                 durak::core::net::BuildSnapshot(*snapshot_owner_, seat_, next_msg_id_++);
 
             const std::uint8_t* data_ptr = buf.data();
-            const std::size_t   data_len = buf.size();
+            const std::size_t data_len = buf.size();
 
             send_(data_ptr, data_len);
 
@@ -186,27 +186,27 @@ namespace
         std::uint64_t next_msg_id_;
 
         // Pointers valid for the lifetime of the match
-        durak::core::GameImpl* game_ { nullptr };
-        const durak::core::GameImpl* snapshot_owner_ { nullptr };
+        durak::core::GameImpl* game_{nullptr};
+        const durak::core::GameImpl* snapshot_owner_{nullptr};
     };
 
     struct SeatConn
     {
-        durak::core::PlyrIdxT seat {0};
-        websocketpp::connection_hdl hdl {};
+        durak::core::PlyrIdxT seat{0};
+        websocketpp::connection_hdl hdl{};
         std::shared_ptr<InboundQueue> inbox;
         std::shared_ptr<WsRemotePlayer> player;
-        bool connected {false};
+        bool connected{false};
     };
 
     struct CmdLine
     {
-        std::uint16_t port {9002};
-        std::uint8_t  players {2};
-        std::uint64_t seed {12345ULL};
-        bool deck36 {true};
-        std::uint8_t deal_up_to {6};
-        std::uint32_t turn_timeout_ms {15000};
+        std::uint16_t port{9002};
+        std::uint8_t players{2};
+        std::uint64_t seed{12345ULL};
+        bool deck36{true};
+        std::uint8_t deal_up_to{6};
+        std::uint32_t turn_timeout_ms{15000};
     };
 
     CmdLine parse_args(int argc, char** argv)
@@ -215,28 +215,28 @@ namespace
         for (int i = 1; i < argc; ++i)
         {
             std::string key = argv[i];
-            auto read_u64 = [&](std::uint64_t &dst)
+            auto read_u64 = [&](std::uint64_t& dst)
             {
                 if (i + 1 < argc)
                 {
                     dst = std::strtoull(argv[++i], nullptr, 10);
                 }
             };
-            auto read_u32 = [&](std::uint32_t &dst)
+            auto read_u32 = [&](std::uint32_t& dst)
             {
                 if (i + 1 < argc)
                 {
                     dst = static_cast<std::uint32_t>(std::strtoul(argv[++i], nullptr, 10));
                 }
             };
-            auto read_u16 = [&](std::uint16_t &dst)
+            auto read_u16 = [&](std::uint16_t& dst)
             {
                 if (i + 1 < argc)
                 {
                     dst = static_cast<std::uint16_t>(std::strtoul(argv[++i], nullptr, 10));
                 }
             };
-            auto read_u8 = [&](std::uint8_t &dst)
+            auto read_u8 = [&](std::uint8_t& dst)
             {
                 if (i + 1 < argc)
                 {
@@ -244,9 +244,9 @@ namespace
                 }
             };
 
-            if (key == "--port")            { read_u16(c.port); }
-            else if (key == "--players")    { read_u8(c.players); }
-            else if (key == "--seed")       { read_u64(c.seed); }
+            if (key == "--port") { read_u16(c.port); }
+            else if (key == "--players") { read_u8(c.players); }
+            else if (key == "--seed") { read_u64(c.seed); }
             else if (key == "--deal-up-to") { read_u8(c.deal_up_to); }
             else if (key == "--turn-timeout-ms") { read_u32(c.turn_timeout_ms); }
             else if (key == "--deck36")
@@ -264,7 +264,6 @@ namespace
         }
         return c;
     }
-
 } // anon
 
 int main(int argc, char** argv)
@@ -277,7 +276,7 @@ int main(int argc, char** argv)
     WsServer server;
     server.clear_access_channels(websocketpp::log::alevel::all);
     server.set_access_channels(websocketpp::log::alevel::connect |
-                               websocketpp::log::alevel::disconnect);
+        websocketpp::log::alevel::disconnect);
     server.init_asio();
 
     std::mutex seats_mx;
@@ -292,7 +291,7 @@ int main(int argc, char** argv)
         seats.push_back(std::move(sc));
     }
 
-    std::atomic<std::uint8_t> connected_count {0};
+    std::atomic<std::uint8_t> connected_count{0};
 
     using Hdl = websocketpp::connection_hdl;
     // Map hdl -> seat index
@@ -309,7 +308,9 @@ int main(int argc, char** argv)
             {
                 server.close(hdl, websocketpp::close::status::policy_violation, "Seats full");
             }
-            catch (...) {}
+            catch (...)
+            {
+            }
             return;
         }
 
@@ -425,7 +426,9 @@ int main(int argc, char** argv)
             {
                 std::print("[Server] send() error seat {}: {}\n", static_cast<int>(seat), e.what());
             }
-            catch (...) {}
+            catch (...)
+            {
+            }
         };
     };
 
@@ -477,7 +480,9 @@ int main(int argc, char** argv)
             {
                 server.send(seats[s]->hdl, buf.data(), buf.size(), websocketpp::frame::opcode::binary);
             }
-            catch (...) {}
+            catch (...)
+            {
+            }
         }
     };
 
@@ -516,10 +521,14 @@ int main(int argc, char** argv)
             {
                 server.close(seats[s]->hdl, websocketpp::close::status::going_away, "Game over");
             }
-            catch (...) {}
+            catch (...)
+            {
+            }
         }
     }
-    catch (...) {}
+    catch (...)
+    {
+    }
 
     if (net_thr.joinable())
     {

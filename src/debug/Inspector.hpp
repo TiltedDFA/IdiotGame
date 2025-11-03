@@ -52,16 +52,16 @@ namespace durak::core::debug
                 std::vector<Card const*>& dst = ret.hands[i];
                 dst.reserve(src.size());
                 std::ranges::transform(src, std::back_inserter(dst),
-                    [](CardSP const& c) -> Card const* { return c.get();});
+                                       [](CardSP const& c) -> Card const* { return c.get(); });
             }
 
             ret.deck.reserve(g.deck_.size());
             std::ranges::transform(std::as_const(g.deck_), std::back_inserter(ret.deck),
-            [](CardSP const& c) -> Card const* { return c.get();});
+                                   [](CardSP const& c) -> Card const* { return c.get(); });
 
             ret.discard.reserve(g.discard_.size());
             std::ranges::transform(std::as_const(g.discard_), std::back_inserter(ret.discard),
-            [](CardSP const& c) -> Card const* { return c.get();});
+                                   [](CardSP const& c) -> Card const* { return c.get(); });
 
             for (size_t i{}; i < g.table_.size(); ++i)
             {

@@ -22,77 +22,82 @@ namespace durak::core::debug
 #if !DRK_ENABLE_TEST_HOOKS
         (void)g;
 #else
-      using namespace std;
+        using namespace std;
 
-    Inspector::SnapshotAll const s = Inspector::Gather(g);
+        Inspector::SnapshotAll const s = Inspector::Gather(g);
 
-    // 1) Defend implies attack (never a defend card without an attack)
-    for (auto const& slot : s.table)
-    {
-        bool const a = slot.first  != nullptr;
-        bool const d = slot.second != nullptr;
-        assert(!d || a);
-    }
-
-    // 2) In Cleanup: either table empty OR all attacks covered
-    if (s.phase == Phase::Cleanup)
-    {
-        bool any_att = false;
-        bool all_cov = true;
-        for (const auto& [fst, snd] : s.table) {
-            bool const a = fst  != nullptr;
-            bool const d = snd != nullptr;
-            any_att |= a;
-            all_cov &= (!a) || d;  // a => d
-        }
-        assert(!any_att || all_cov);
-    }
-
-    // 3) Defender turn must have at least one uncovered attack
-    if (s.phase == Phase::Defending)
-    {
-        bool any_uncovered = false;
-        for (const auto& [fst, snd] : s.table)
+        // 1) Defend implies attack (never a defend card without an attack)
+        for (auto const& slot : s.table)
         {
-            bool const a = fst  != nullptr;
-            bool const d = snd != nullptr;
-            any_uncovered |= (a && !d);
+            bool const a = slot.first != nullptr;
+            bool const d = slot.second != nullptr;
+            assert(!d || a);
         }
-        assert(any_uncovered && "Defender turn without uncovered attacks");
-    }
 
-    // 4) Classic attack limit:
-    //    total attacks on table ≤ min(table capacity, defender hand size)
-    {
-        size_t attacks = 0;
-        for (const auto& key : s.table | views::keys)
-            attacks += (key != nullptr);
-
-        size_t const def_hand = s.hands.at(s.defender_idx).size();
-        size_t const cap = std::min(constants::MaxTableSlots, def_hand);
-
-        assert(attacks <= cap && "Attacks exceed defender capacity");
-    }
-
-    // 5) Deep: no duplicate Card* across zones + total equals deck size (36 or 52)
-    {
-        std::unordered_set<Card const*> seen;
-        seen.reserve(s.max_deck_size);
-
-        auto push_unique = [&](Card const* p)
+        // 2) In Cleanup: either table empty OR all attacks covered
+        if (s.phase == Phase::Cleanup)
         {
-            if (!p) return;
-            bool const inserted = seen.insert(p).second;
-            assert(inserted && "Duplicate card pointer across zones");
-        };
+            bool any_att = false;
+            bool all_cov = true;
+            for (const auto& [fst, snd] : s.table)
+            {
+                bool const a = fst != nullptr;
+                bool const d = snd != nullptr;
+                any_att |= a;
+                all_cov &= (!a) || d; // a => d
+            }
+            assert(!any_att || all_cov);
+        }
 
-        for (auto p : s.deck)    push_unique(p);
-        for (auto p : s.discard) push_unique(p);
-        for (auto const& h : s.hands) for (auto const p : h) push_unique(p);
-        for (auto const& t : s.table) { push_unique(t.first); push_unique(t.second); }
+        // 3) Defender turn must have at least one uncovered attack
+        if (s.phase == Phase::Defending)
+        {
+            bool any_uncovered = false;
+            for (const auto& [fst, snd] : s.table)
+            {
+                bool const a = fst != nullptr;
+                bool const d = snd != nullptr;
+                any_uncovered |= (a && !d);
+            }
+            assert(any_uncovered && "Defender turn without uncovered attacks");
+        }
 
-        assert(seen.size() == s.max_deck_size && "Materialized card count != deck size");
-    }
+        // 4) Classic attack limit:
+        //    total attacks on table ≤ min(table capacity, defender hand size)
+        {
+            size_t attacks = 0;
+            for (const auto& key : s.table | views::keys)
+                attacks += (key != nullptr);
+
+            size_t const def_hand = s.hands.at(s.defender_idx).size();
+            size_t const cap = std::min(constants::MaxTableSlots, def_hand);
+
+            assert(attacks <= cap && "Attacks exceed defender capacity");
+        }
+
+        // 5) Deep: no duplicate Card* across zones + total equals deck size (36 or 52)
+        {
+            std::unordered_set<Card const*> seen;
+            seen.reserve(s.max_deck_size);
+
+            auto push_unique = [&](Card const* p)
+            {
+                if (!p) return;
+                bool const inserted = seen.insert(p).second;
+                assert(inserted && "Duplicate card pointer across zones");
+            };
+
+            for (auto p : s.deck) push_unique(p);
+            for (auto p : s.discard) push_unique(p);
+            for (auto const& h : s.hands) for (auto const p : h) push_unique(p);
+            for (auto const& t : s.table)
+            {
+                push_unique(t.first);
+                push_unique(t.second);
+            }
+
+            assert(seen.size() == s.max_deck_size && "Materialized card count != deck size");
+        }
 
 
 #endif // DRK_ENABLE_TEST_HOOKS == true

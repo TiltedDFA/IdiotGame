@@ -9,7 +9,6 @@
 #include "Actions.hpp"
 
 
-
 namespace durak::core
 {
     // Immutable snapshot exposed to UI/network (non-owning)
@@ -18,7 +17,7 @@ namespace durak::core
         Suit trump{};
         uint8_t n_players{};
         PlyrIdxT attacker_idx{}, defender_idx{};
-        Phase   phase{Phase::Attacking};
+        Phase phase{Phase::Attacking};
 
         TableViewT table{};
 
@@ -30,7 +29,6 @@ namespace durak::core
         uint8_t attacks_used{};
         bool defender_took{false};
     };
-
 } // namespace durak::core
 
 #endif //IDIOTGAME_STATE_HPP

@@ -30,17 +30,17 @@
 namespace durak::net
 {
     using WsServer = websocketpp::server<websocketpp::config::asio>;
-    using Hdl      = websocketpp::connection_hdl;
+    using Hdl = websocketpp::connection_hdl;
 
     struct SeatChannel
     {
-        std::weak_ptr<WsServer>          ep;
-        Hdl                              hdl;
+        std::weak_ptr<WsServer> ep;
+        Hdl hdl;
 
-        std::mutex                       mtx;
-        std::condition_variable          cv;
+        std::mutex mtx;
+        std::condition_variable cv;
         std::deque<std::vector<uint8_t>> inbox;
-        bool                             connected{false};
+        bool connected{false};
 
         void Enqueue(std::vector<uint8_t> bytes)
         {
@@ -55,7 +55,7 @@ namespace durak::net
                           std::chrono::steady_clock::time_point deadline)
         {
             std::unique_lock<std::mutex> lk(mtx);
-            cv.wait_until(lk, deadline, [&]{ return !inbox.empty(); });
+            cv.wait_until(lk, deadline, [&] { return !inbox.empty(); });
             if (inbox.empty())
             {
                 return false;
@@ -102,9 +102,9 @@ namespace durak::net
         }
 
     private:
-        durak::core::GameImpl*          game_{nullptr}; // late-bound
-        durak::core::PlyrIdxT           seat_{};
-        std::shared_ptr<SeatChannel>    chan_;
+        durak::core::GameImpl* game_{nullptr}; // late-bound
+        durak::core::PlyrIdxT seat_{};
+        std::shared_ptr<SeatChannel> chan_;
     };
 }
 

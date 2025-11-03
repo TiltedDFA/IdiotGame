@@ -18,15 +18,17 @@ namespace durak::core
         OK,
         Timeout
     };
+
     struct TimedDecision
     {
         PlayerAction action{};
         DesicionResult result{};
     };
+
     class Judge
     {
     public:
-        Judge()=default;
+        Judge() = default;
 
         auto GetAction(GameImpl& game, PlyrIdxT actor) const -> TimedDecision;
     };

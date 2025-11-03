@@ -9,21 +9,38 @@
 
 namespace durak::core
 {
-
     // player should remove and give the cards to the table so SP
-    struct AttackAction   { std::vector<CardWP> cards; };
+    struct AttackAction
+    {
+        std::vector<CardWP> cards;
+    };
+
     struct DefendPair
     {
         CardWP attack;
         CardWP defend;
     };
-    struct DefendAction   { std::vector<DefendPair> pairs; };
-    struct TransferAction { CardWP card; };
-    struct PassAction     {};
-    struct TakeAction     {};
+
+    struct DefendAction
+    {
+        std::vector<DefendPair> pairs;
+    };
+
+    struct TransferAction
+    {
+        CardWP card;
+    };
+
+    struct PassAction
+    {
+    };
+
+    struct TakeAction
+    {
+    };
 
     using PlayerAction = std::variant<
-      AttackAction, DefendAction, TransferAction, PassAction, TakeAction>;
+        AttackAction, DefendAction, TransferAction, PassAction, TakeAction>;
 
     enum class MoveOutcome : uint8_t
     {

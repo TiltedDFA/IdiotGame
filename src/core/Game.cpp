@@ -7,27 +7,29 @@
 #include "Util.hpp"
 #include <print>
 #include <utility>
+
 namespace durak::core
 {
     GameImpl::GameImpl(Config const& config,
-         std::unique_ptr<Rules> rules,
-         std::vector<std::unique_ptr<Player>> players):
-    cfg_(config),
-    rules_(std::move(rules)),
-    players_(std::move(players)),
-    rng_{cfg_.seed},
-    judge_(std::make_shared<Judge>()),
-    hands_(players_.size())
+                       std::unique_ptr<Rules> rules,
+                       std::vector<std::unique_ptr<Player>> players) :
+        cfg_(config),
+        rules_(std::move(rules)),
+        players_(std::move(players)),
+        rng_{cfg_.seed},
+        judge_(std::make_shared<Judge>()),
+        hands_(players_.size())
     {
         DRK_ASSERT(players_.size() >= 2, "Less than 2 players while initalising core");
         DRK_ASSERT(!std::ranges::any_of(players_,
-            [](std::unique_ptr<Player> const& p) {return !p;}), "Invalid player in core");
+                                        [](std::unique_ptr<Player> const& p) { return !p; }), "Invalid player in core");
         BuildDeck();
         DRK_ASSERT(!deck_.empty(), "Empty deck after attempting init of deck in core");
         trump_ = deck_.back()->suit;
         DealInitalHands();
         ChoseInitalRoles();
     }
+
     auto GameImpl::BuildDeck() -> void
     {
         deck_.clear();
@@ -44,10 +46,11 @@ namespace durak::core
         }
         std::ranges::shuffle(deck_, rng_);
     }
+
     auto GameImpl::DealInitalHands() -> void
     {
         size_t target = cfg_.deal_up_to;
-        DRK_ASSERT(target*hands_.size() <= deck_.size(), "Less cards in deck than required to init player hands");
+        DRK_ASSERT(target * hands_.size() <= deck_.size(), "Less cards in deck than required to init player hands");
         //will not deal round robin as with a randomly shuffled deck
         //dealing order should not matter.
         for (auto& hand : hands_)
@@ -59,6 +62,7 @@ namespace durak::core
             }
         }
     }
+
     auto GameImpl::ChoseInitalRoles() -> void
     {
         attacker_idx_ = 0;
@@ -66,17 +70,19 @@ namespace durak::core
         phase_ = Phase::Attacking;
         defender_took_ = false;
     }
+
     //helpers for snapshotfor
-    template<typename T>
+    template <typename T>
     static auto Shared_to_weak(std::vector<std::shared_ptr<T>> const& vec)
         -> std::vector<std::weak_ptr<T>>
     {
         return std::vector<std::weak_ptr<T>>(vec.cbegin(), vec.cend());
     }
-    template<std::size_t... I>
+
+    template <std::size_t... I>
     inline auto ViewTableHelper(TableT const& src, std::index_sequence<I...>) -> TableViewT
     {
-        return TableViewT{ TableSlotView{ src[I].attack, src[I].defend }... };
+        return TableViewT{TableSlotView{src[I].attack, src[I].defend}...};
     }
 
     inline auto MakeViewTable(TableT const& src) -> TableViewT
@@ -102,10 +108,10 @@ namespace durak::core
             snap->other_counts.push_back(hand.size());
         }
         auto used = static_cast<uint8_t>(
-            std::ranges::count_if(table_, [](auto const& ts){ return static_cast<bool>(ts.attack); })
+            std::ranges::count_if(table_, [](auto const& ts) { return static_cast<bool>(ts.attack); })
         );
-        snap->bout_cap      = bout_cap_;
-        snap->attacks_used  = used;
+        snap->bout_cap = bout_cap_;
+        snap->attacks_used = used;
         snap->defender_took = defender_took_;
 
         return snap;
@@ -114,14 +120,18 @@ namespace durak::core
     auto GameImpl::FindFromHand(PlyrIdxT const seat, Card const& c) const -> CardWP
     {
         auto const it = std::ranges::find_if(std::as_const(hands_[seat]),
-            [&c](CardSP const& csp){ return c == *csp;});
+                                             [&c](CardSP const& csp) { return c == *csp; });
         return (it != std::cend(hands_[seat])) ? CardWP{*it} : CardWP{};
     }
 
     auto GameImpl::FindFromAtkTable(Card const& c) const -> CardWP
     {
         auto const it = std::ranges::find_if(std::as_const(table_),
-    [&c](TableSlot const& ts){ if (!ts.attack) return false; return c == *ts.attack;});
+                                             [&c](TableSlot const& ts)
+                                             {
+                                                 if (!ts.attack) return false;
+                                                 return c == *ts.attack;
+                                             });
         return (it != std::cend(table_)) ? CardWP{it->attack} : CardWP{};
     }
 
@@ -137,11 +147,13 @@ namespace durak::core
         {
             auto const it =
                 std::ranges::find_if(hand, [&atk_card](CardSP const& csp)
-                    { return *csp == *atk_card;});
+                {
+                    return *csp == *atk_card;
+                });
             DRK_ASSERT(it != std::end(hand), "Attacker card not in hand");
 
             auto const free_slot_it = std::ranges::find_if(table_,
-                [](TableSlot const& s) {return !(s.attack);});
+                                                           [](TableSlot const& s) { return !(s.attack); });
 
             if (free_slot_it == std::end(table_))
                 DRK_THROW(durak::core::error::Code::State, "No free table slots");
@@ -154,15 +166,22 @@ namespace durak::core
             CCardSP def_card = def.lock();
             auto const it =
                 std::ranges::find_if(hand, [&def_card](CardSP const& csp)
-                    { return *csp == *def_card;});
+                {
+                    return *csp == *def_card;
+                });
 
             DRK_ASSERT(it != std::end(hand), "Defender card not in hand");
 
             auto const cover_slot_it = std::ranges::find_if(table_,
-            [&](TableSlot const& s) {return s.attack && *s.attack == *atk_card;});
+                                                            [&](TableSlot const& s)
+                                                            {
+                                                                return s.attack && *s.attack == *atk_card;
+                                                            });
 
-            if (cover_slot_it == std::end(table_)) DRK_THROW(durak::core::error::Code::State, "Card which you attempt to cover doesn't exist");
-            if (cover_slot_it->defend) DRK_THROW(durak::core::error::Code::State, "Card which you attempt to cover is already covered");
+            if (cover_slot_it == std::end(table_)) DRK_THROW(durak::core::error::Code::State,
+                                                             "Card which you attempt to cover doesn't exist");
+            if (cover_slot_it->defend) DRK_THROW(durak::core::error::Code::State,
+                                                 "Card which you attempt to cover is already covered");
 
             cover_slot_it->defend = std::move(*it);
             hand.erase(it);
@@ -234,7 +253,7 @@ namespace durak::core
     auto GameImpl::AllAttacksCovered() const -> bool
     {
         return std::ranges::none_of(table_,
-            [](TableSlot const& ts) {return  ts.attack && !ts.defend;});
+                                    [](TableSlot const& ts) { return ts.attack && !ts.defend; });
     }
 
     auto GameImpl::Step() -> MoveOutcome
@@ -250,12 +269,10 @@ namespace durak::core
 
         if (auto const ok = rules_->Validate(*this, action); !ok.has_value())
         {
-            std::print("{}\n",durak::core::error::describe(ok.error()));
+            std::print("{}\n", durak::core::error::describe(ok.error()));
             return MoveOutcome::Invalid;
         }
         rules_->Apply(*this, action);
         return rules_->Advance(*this);;
     }
-
-
 }

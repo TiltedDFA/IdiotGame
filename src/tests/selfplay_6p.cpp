@@ -17,34 +17,32 @@ using namespace durak::core;
 
 namespace
 {
-
-auto make_players(std::uint64_t seed, std::size_t n) -> std::vector<std::unique_ptr<Player>>
-{
-    std::vector<std::unique_ptr<Player>> ps;
-    ps.reserve(n);
-    for (std::size_t i{}; i < n; ++i)
+    auto make_players(std::uint64_t seed, std::size_t n) -> std::vector<std::unique_ptr<Player>>
     {
-        ps.emplace_back(std::make_unique<RandomAI>(seed + static_cast<std::uint64_t>(i + 1)));
+        std::vector<std::unique_ptr<Player>> ps;
+        ps.reserve(n);
+        for (std::size_t i{}; i < n; ++i)
+        {
+            ps.emplace_back(std::make_unique<RandomAI>(seed + static_cast<std::uint64_t>(i + 1)));
+        }
+        return ps;
     }
-    return ps;
-}
 
-auto make_game(std::uint64_t seed, std::size_t n_players) -> GameImpl
-{
-    Config cfg{
-        .n_players    = static_cast<std::uint32_t>(n_players),
-        .deal_up_to   = 6,
-        .deck36       = true,                      // 36 cards = 6 * 6 initial deal (deck empty after deal)
-        .seed         = seed,
-        .turn_timeout = std::chrono::seconds(2u)
-    };
+    auto make_game(std::uint64_t seed, std::size_t n_players) -> GameImpl
+    {
+        Config cfg{
+            .n_players = static_cast<std::uint32_t>(n_players),
+            .deal_up_to = 6,
+            .deck36 = true, // 36 cards = 6 * 6 initial deal (deck empty after deal)
+            .seed = seed,
+            .turn_timeout = std::chrono::seconds(2u)
+        };
 
-    auto ps = make_players(seed, n_players);
-    ps = durak::core::debug::WrapRecording(ps);
+        auto ps = make_players(seed, n_players);
+        ps = durak::core::debug::WrapRecording(ps);
 
-    return GameImpl(cfg, std::make_unique<ClassicRules>(), std::move(ps));
-}
-
+        return GameImpl(cfg, std::make_unique<ClassicRules>(), std::move(ps));
+    }
 } // anonymous namespace
 
 TEST(SelfPlay6P, Transcripts_And_End)

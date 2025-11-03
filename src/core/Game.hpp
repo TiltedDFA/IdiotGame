@@ -16,7 +16,11 @@
 #include "Player.hpp"
 #include "Judge.hpp"
 
-namespace durak::core::debug {struct Inspector;}
+namespace durak::core::debug
+{
+    struct Inspector;
+}
+
 namespace durak::core
 {
     //forward declare
@@ -32,11 +36,11 @@ namespace durak::core
         auto Step() -> MoveOutcome;
         auto SnapshotFor(uint8_t seat) const -> std::shared_ptr<GameSnapshot const>;
 
-        auto Attacker() const noexcept      -> PlyrIdxT { return attacker_idx_; }
-        auto Defender() const noexcept      -> PlyrIdxT { return defender_idx_; }
-        auto PhaseNow() const noexcept      -> Phase   { return phase_;  }
-        auto Trump()    const noexcept      -> Suit    { return trump_;  }
-        auto PlayerCount() const noexcept   -> size_t { return players_.size(); }
+        auto Attacker() const noexcept -> PlyrIdxT { return attacker_idx_; }
+        auto Defender() const noexcept -> PlyrIdxT { return defender_idx_; }
+        auto PhaseNow() const noexcept -> Phase { return phase_; }
+        auto Trump() const noexcept -> Suit { return trump_; }
+        auto PlayerCount() const noexcept -> size_t { return players_.size(); }
 
         //allows class to directly access private data on an instance
         friend class ClassicRules;
@@ -57,9 +61,14 @@ namespace durak::core
 
         auto NextLivePlayer(PlyrIdxT from) const -> PlyrIdxT;
 
-        inline auto NextSeat(PlyrIdxT const idx) const -> PlyrIdxT { return static_cast<PlyrIdxT>((idx + 1) % players_.size()); }
+        inline auto NextSeat(PlyrIdxT const idx) const -> PlyrIdxT
+        {
+            return static_cast<PlyrIdxT>((idx + 1) % players_.size());
+        }
+
         auto AllAttacksCovered() const -> bool;
         auto PlayerAt(PlyrIdxT seat) -> Player* { return players_[seat].get(); }
+
     private:
         //Produces a shuffled deck
         auto BuildDeck() -> void;
@@ -74,16 +83,16 @@ namespace durak::core
         std::shared_ptr<Judge> judge_;
 
         // Authoritative state
-        std::vector<std::vector<CardSP>> hands_;             // [seat] owns cards in hand
-        std::array<TableSlot, constants::MaxTableSlots> table_{};      // owns table cards
-        std::vector<CardSP> deck_;                           // owns remaining deck cards
-        std::vector<CardSP> discard_;                        // beaten cards
+        std::vector<std::vector<CardSP>> hands_; // [seat] owns cards in hand
+        std::array<TableSlot, constants::MaxTableSlots> table_{}; // owns table cards
+        std::vector<CardSP> deck_; // owns remaining deck cards
+        std::vector<CardSP> discard_; // beaten cards
 
         // Turn/round state
-        Suit    trump_{Suit::Spades};
+        Suit trump_{Suit::Spades};
         uint8_t attacker_idx_{0}, defender_idx_{1};
-        Phase   phase_{Phase::Attacking};
-        bool    defender_took_{false}; // set by Apply(Take)
+        Phase phase_{Phase::Attacking};
+        bool defender_took_{false}; // set by Apply(Take)
         uint8_t bout_cap_{constants::MaxTableSlots};
     };
 }
