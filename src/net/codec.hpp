@@ -18,6 +18,8 @@
 #include "../core/Game.hpp"
 #include "../core/Exception.hpp"
 
+#include "../generated/flatbuffers/durak_net_generated.h"
+
 namespace durak::core::net
 {
 
@@ -46,6 +48,14 @@ struct DefPair
     CardVal attack{};
     CardVal defend{};
 };
+
+auto ToFbSuit(durak::core::Suit s) noexcept -> durak::gen::net::Suit;
+auto ToFbRank(durak::core::Rank r) noexcept -> durak::gen::net::Rank;
+auto ToFbPhase(durak::core::Phase p) noexcept -> durak::gen::net::Phase;
+
+auto FromFbSuit(durak::gen::net::Suit s) noexcept -> durak::core::Suit;
+auto FromFbRank(durak::gen::net::Rank r) noexcept -> durak::core::Rank;
+auto FromFbPhase(durak::gen::net::Phase p) noexcept -> durak::core::Phase;
 
 // ----- Value-based builders (FOR CLIENTS) -----
 // These build an Envelope::PlayerAction directly from suit/rank values.

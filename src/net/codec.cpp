@@ -11,6 +11,101 @@
 // FlatBuffers schema (adjust path if your build outputs elsewhere)
 #include "../generated/flatbuffers/durak_net_generated.h"
 
+namespace durak::core::net
+{
+    auto ToFbSuit(durak::core::Suit s) noexcept -> durak::gen::net::Suit
+    {
+        switch (s)
+        {
+        case durak::core::Suit::Clubs:    return durak::gen::net::Suit::Clubs;
+        case durak::core::Suit::Diamonds: return durak::gen::net::Suit::Diamonds;
+        case durak::core::Suit::Hearts:   return durak::gen::net::Suit::Hearts;
+        case durak::core::Suit::Spades:   return durak::gen::net::Suit::Spades;
+        }
+        return durak::gen::net::Suit::Clubs;
+    }
+
+    auto FromFbSuit(durak::gen::net::Suit s) noexcept -> durak::core::Suit
+    {
+        switch (s)
+        {
+        case durak::gen::net::Suit::Clubs:    return durak::core::Suit::Clubs;
+        case durak::gen::net::Suit::Diamonds: return durak::core::Suit::Diamonds;
+        case durak::gen::net::Suit::Hearts:   return durak::core::Suit::Hearts;
+        case durak::gen::net::Suit::Spades:   return durak::core::Suit::Spades;
+        }
+        return durak::core::Suit::Clubs;
+    }
+
+    auto ToFbRank(durak::core::Rank r) noexcept -> durak::gen::net::Rank
+    {
+        switch (r)
+        {
+        case durak::core::Rank::Two:   return durak::gen::net::Rank::Two;
+        case durak::core::Rank::Three: return durak::gen::net::Rank::Three;
+        case durak::core::Rank::Four:  return durak::gen::net::Rank::Four;
+        case durak::core::Rank::Five:  return durak::gen::net::Rank::Five;
+        case durak::core::Rank::Six:   return durak::gen::net::Rank::Six;
+        case durak::core::Rank::Seven: return durak::gen::net::Rank::Seven;
+        case durak::core::Rank::Eight: return durak::gen::net::Rank::Eight;
+        case durak::core::Rank::Nine:  return durak::gen::net::Rank::Nine;
+        case durak::core::Rank::Ten:   return durak::gen::net::Rank::Ten;
+        case durak::core::Rank::Jack:  return durak::gen::net::Rank::Jack;
+        case durak::core::Rank::Queen: return durak::gen::net::Rank::Queen;
+        case durak::core::Rank::King:  return durak::gen::net::Rank::King;
+        case durak::core::Rank::Ace:   return durak::gen::net::Rank::Ace;
+        }
+        return durak::gen::net::Rank::Two;
+    }
+
+    auto FromFbRank(durak::gen::net::Rank r) noexcept -> durak::core::Rank
+    {
+        switch (r)
+        {
+        case durak::gen::net::Rank::Two:   return durak::core::Rank::Two;
+        case durak::gen::net::Rank::Three: return durak::core::Rank::Three;
+        case durak::gen::net::Rank::Four:  return durak::core::Rank::Four;
+        case durak::gen::net::Rank::Five:  return durak::core::Rank::Five;
+        case durak::gen::net::Rank::Six:   return durak::core::Rank::Six;
+        case durak::gen::net::Rank::Seven: return durak::core::Rank::Seven;
+        case durak::gen::net::Rank::Eight: return durak::core::Rank::Eight;
+        case durak::gen::net::Rank::Nine:  return durak::core::Rank::Nine;
+        case durak::gen::net::Rank::Ten:   return durak::core::Rank::Ten;
+        case durak::gen::net::Rank::Jack:  return durak::core::Rank::Jack;
+        case durak::gen::net::Rank::Queen: return durak::core::Rank::Queen;
+        case durak::gen::net::Rank::King:  return durak::core::Rank::King;
+        case durak::gen::net::Rank::Ace:   return durak::core::Rank::Ace;
+        }
+        return durak::core::Rank::Two;
+    }
+
+    auto ToFbPhase(durak::core::Phase p) noexcept -> durak::gen::net::Phase
+    {
+        switch (p)
+        {
+        case durak::core::Phase::Attacking: return durak::gen::net::Phase::Attacking;
+        case durak::core::Phase::Defending: return durak::gen::net::Phase::Defending;
+        }
+        return durak::gen::net::Phase::Attacking;
+    }
+
+    auto FromFbPhase(durak::gen::net::Phase p) noexcept -> durak::core::Phase
+    {
+        switch (p)
+        {
+        case durak::gen::net::Phase::Attacking: return durak::core::Phase::Attacking;
+        case durak::gen::net::Phase::Defending: return durak::core::Phase::Defending;
+        }
+        return durak::core::Phase::Attacking;
+    }
+
+    // Small helper that now uses the explicit mapping
+    inline auto FbToSuitRank(durak::gen::net::Card const* c)
+        -> std::pair<durak::core::Suit, durak::core::Rank>
+    {
+        return { FromFbSuit(c->suit()), FromFbRank(c->rank()) };
+    }
+}
 namespace
 {
     // Verify enum layouts (one value per enum is sufficient to catch drift)
@@ -18,18 +113,10 @@ namespace
     static_assert((int)durak::core::Rank::Two == (int)durak::gen::net::Rank::Two);
     static_assert((int)durak::core::Phase::Attacking == (int)durak::gen::net::Phase::Attacking);
 
-    inline auto to_fb(durak::core::Suit s) -> durak::gen::net::Suit { return static_cast<durak::gen::net::Suit>(s); }
-    inline auto to_fb(durak::core::Rank r) -> durak::gen::net::Rank { return static_cast<durak::gen::net::Rank>(r); }
-    inline auto to_fb(durak::core::Phase p) -> durak::gen::net::Phase { return static_cast<durak::gen::net::Phase>(p); }
-
-    inline auto from_fb(durak::gen::net::Suit s) -> durak::core::Suit { return static_cast<durak::core::Suit>(s); }
-    inline auto from_fb(durak::gen::net::Rank r) -> durak::core::Rank { return static_cast<durak::core::Rank>(r); }
-    inline auto from_fb(durak::gen::net::Phase p) -> durak::core::Phase { return static_cast<durak::core::Phase>(p); }
-
     inline auto fb_to_sr(durak::gen::net::Card const* c)
         -> std::pair<durak::core::Suit, durak::core::Rank>
     {
-        return {from_fb(c->suit()), from_fb(c->rank())};
+        return {durak::core::net::FromFbSuit(c->suit()), durak::core::net::FromFbRank(c->rank())};
     }
 } // anonymous
 
@@ -39,7 +126,7 @@ namespace durak::core::net
         -> flatbuffers::Offset<durak::gen::net::Card>
     {
         // Build a Card using the current schema enums
-        return durak::gen::net::CreateCard(fbb, to_fb(cv.suit), to_fb(cv.rank));
+        return durak::gen::net::CreateCard(fbb, ToFbSuit(cv.suit), ToFbRank(cv.rank));
     }
 
         auto BuildAction_Attack(PlyrIdxT actor,
@@ -103,7 +190,7 @@ namespace durak::core::net
 
     // ---------- Snapshot (server → client) ----------
 
-    auto BuildSnapshot(durak::core::GameImpl const& g,
+     auto BuildSnapshot(durak::core::GameImpl const& g,
                        durak::core::PlyrIdxT seat,
                        std::uint64_t msg_id)
         -> flatbuffers::DetachedBuffer
@@ -112,53 +199,59 @@ namespace durak::core::net
 
         flatbuffers::FlatBufferBuilder fbb;
 
-        // Table → FB
+        // Table
         std::vector<flatbuffers::Offset<durak::gen::net::TableSlot>> tbl;
         tbl.reserve(snap->table.size());
         for (durak::core::TableSlotView const& tv : snap->table)
         {
             flatbuffers::Offset<durak::gen::net::Card> a_off{};
             if (auto sp = tv.attack.lock())
-                a_off = durak::gen::net::CreateCard(fbb, to_fb(sp->suit), to_fb(sp->rank));
+            {
+                a_off = durak::gen::net::CreateCard(fbb, ToFbSuit(sp->suit), ToFbRank(sp->rank));
+            }
 
             flatbuffers::Offset<durak::gen::net::Card> d_off{};
             if (auto sp = tv.defend.lock())
-                d_off = durak::gen::net::CreateCard(fbb, to_fb(sp->suit), to_fb(sp->rank));
+            {
+                d_off = durak::gen::net::CreateCard(fbb, ToFbSuit(sp->suit), ToFbRank(sp->rank));
+            }
 
             tbl.push_back(durak::gen::net::CreateTableSlot(fbb, a_off, d_off));
         }
         auto const tbl_vec = fbb.CreateVector(tbl);
 
-        // My hand → FB
+        // My hand
         std::vector<flatbuffers::Offset<durak::gen::net::Card>> my;
         my.reserve(snap->my_hand.size());
         for (durak::core::CardWP const& w : snap->my_hand)
+        {
             if (auto sp = w.lock())
-                my.push_back(durak::gen::net::CreateCard(fbb, to_fb(sp->suit), to_fb(sp->rank)));
+            {
+                my.push_back(durak::gen::net::CreateCard(fbb, ToFbSuit(sp->suit), ToFbRank(sp->rank)));
+            }
+        }
         auto const my_vec = fbb.CreateVector(my);
 
-        // Other counts
-        auto const cnt_vec = fbb.CreateVector(snap->other_counts);
+        // Other counts unchanged…
 
-        // SeatView
         auto const view = durak::gen::net::CreateSeatView(
             fbb,
             /*schema_version*/ 1,
             /*seat*/ seat,
             /*n_players*/ static_cast<uint8_t>(snap->n_players),
-            /*trump*/ to_fb(snap->trump),
+            /*trump*/ ToFbSuit(snap->trump),
             /*attacker_idx*/ snap->attacker_idx,
             /*defender_idx*/ snap->defender_idx,
-            /*phase*/ to_fb(snap->phase),
+            /*phase*/ ToFbPhase(snap->phase),
             /*table*/ tbl_vec,
             /*my_hand*/ my_vec,
-            /*other_counts*/ cnt_vec,
+            /*other_counts*/ fbb.CreateVector(snap->other_counts),
             /*bout_cap*/ snap->bout_cap,
             /*attacks_used*/ snap->attacks_used,
             /*defender_took*/ snap->defender_took
         );
 
-        auto const sm = durak::gen::net::CreateSnapshotMsg(fbb, msg_id, view);
+        auto const sm  = durak::gen::net::CreateSnapshotMsg(fbb, msg_id, view);
         auto const env = durak::gen::net::CreateEnvelope(
             fbb, durak::gen::net::Message::SnapshotMsg, sm.Union());
         fbb.Finish(env);
@@ -194,7 +287,7 @@ namespace durak::core::net
         vec.reserve(cards.size());
         for (durak::core::CardWP const& w : cards)
             if (auto sp = w.lock())
-                vec.push_back(durak::gen::net::CreateCard(fbb, to_fb(sp->suit), to_fb(sp->rank)));
+                vec.push_back(durak::gen::net::CreateCard(fbb, ToFbSuit(sp->suit), ToFbRank(sp->rank)));
 
         auto const a = durak::gen::net::CreateAction_Attack(fbb, actor, fbb.CreateVector(vec));
         auto const m = durak::gen::net::CreatePlayerActionMsg(
@@ -219,8 +312,8 @@ namespace durak::core::net
             auto atk = p.attack.lock();
             auto def = p.defend.lock();
             if (!atk || !def) continue; // skip invalid
-            auto const a = durak::gen::net::CreateCard(fbb, to_fb(atk->suit), to_fb(atk->rank));
-            auto const d = durak::gen::net::CreateCard(fbb, to_fb(def->suit), to_fb(def->rank));
+            auto const a = durak::gen::net::CreateCard(fbb, ToFbSuit(atk->suit), ToFbRank(atk->rank));
+            auto const d = durak::gen::net::CreateCard(fbb, ToFbSuit(def->suit), ToFbRank(def->rank));
             vec.push_back(durak::gen::net::CreateActionPair(fbb, a, d));
         }
 
@@ -288,6 +381,7 @@ namespace durak::core::net
         case durak::gen::net::Action::Action_Attack:
         {
             auto const* a = pam->action_as_Action_Attack();
+            DecodedAction out{};
             out.actor = static_cast<durak::core::PlyrIdxT>(a->actor());
 
             std::vector<durak::core::CardWP> w;
@@ -296,7 +390,7 @@ namespace durak::core::net
                 w.reserve(v->size());
                 for (auto const* fb_c : *v)
                 {
-                    auto const [s, r] = fb_to_sr(fb_c);
+                    auto const [s, r] = FbToSuitRank(fb_c);
                     durak::core::Card probe{s, r};
                     w.push_back(g.FindFromHand(out.actor, probe));
                 }
@@ -308,6 +402,7 @@ namespace durak::core::net
         case durak::gen::net::Action::Action_Defend:
         {
             auto const* d = pam->action_as_Action_Defend();
+            DecodedAction out{};
             out.actor = static_cast<durak::core::PlyrIdxT>(d->actor());
 
             std::vector<durak::core::DefendPair> pairs;
@@ -316,8 +411,8 @@ namespace durak::core::net
                 pairs.reserve(v->size());
                 for (auto const* fb_p : *v)
                 {
-                    auto const [sa, ra] = fb_to_sr(fb_p->attack());
-                    auto const [sd, rd] = fb_to_sr(fb_p->defend());
+                    auto const [sa, ra] = FbToSuitRank(fb_p->attack());
+                    auto const [sd, rd] = FbToSuitRank(fb_p->defend());
 
                     durak::core::Card atk{sa, ra};
                     durak::core::Card def{sd, rd};

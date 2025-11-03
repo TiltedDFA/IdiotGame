@@ -39,19 +39,6 @@ namespace
         std::array<durak::core::CardSP, durak::core::constants::MaxTableSlots> def_owners;
     };
 
-    durak::core::Suit from_fb_suit(durak::gen::net::Suit s)
-    {
-        return static_cast<durak::core::Suit>(s);
-    }
-    durak::core::Rank from_fb_rank(durak::gen::net::Rank r)
-    {
-        return static_cast<durak::core::Rank>(r);
-    }
-    durak::core::Phase from_fb_phase(durak::gen::net::Phase p)
-    {
-        return static_cast<durak::core::Phase>(p);
-    }
-
     // Converts a SeatView into a core::GameSnapshot + owning scratch.
     // The returned snapshot references memory in 'scratch' via weak_ptrs.
     durak::core::GameSnapshot to_snapshot(const durak::gen::net::SeatView* sv,
@@ -65,11 +52,11 @@ namespace
         //   - if it is 'my_seat' or 'viewer_idx', use that instead.
         // gs. = sv->seat();  // <-- adjust the member name if different
 
-        gs.trump = from_fb_suit(sv->trump());
+        gs.trump = durak::core::net::FromFbSuit(sv->trump());
         gs.n_players = sv->n_players();
         gs.attacker_idx = sv->attacker_idx();
         gs.defender_idx = sv->defender_idx();
-        gs.phase = from_fb_phase(sv->phase());
+        gs.phase = durak::core::net::FromFbPhase(sv->phase());
 
         // Table
         durak::core::TableViewT table{};
@@ -86,8 +73,8 @@ namespace
                 if (ts->attack() != nullptr)
                 {
                     durak::core::CardSP sp = std::make_shared<durak::core::Card>(
-                        from_fb_suit(ts->attack()->suit()),
-                        from_fb_rank(ts->attack()->rank())
+                        durak::core::net::FromFbSuit(ts->attack()->suit()),
+                        durak::core::net::FromFbRank(ts->attack()->rank())
                     );
                     scratch_out.atk_owners[i] = sp;
                     table[i].attack = durak::core::CardWP{sp};
@@ -95,8 +82,8 @@ namespace
                 if (ts->defend() != nullptr)
                 {
                     durak::core::CardSP sp = std::make_shared<durak::core::Card>(
-                        from_fb_suit(ts->defend()->suit()),
-                        from_fb_rank(ts->defend()->rank())
+                        durak::core::net::FromFbSuit(ts->defend()->suit()),
+                        durak::core::net::FromFbRank(ts->defend()->rank())
                     );
                     scratch_out.def_owners[i] = sp;
                     table[i].defend = durak::core::CardWP{sp};
@@ -114,7 +101,7 @@ namespace
             {
                 const durak::gen::net::Card* c = hv->Get(i);
                 durak::core::CardSP sp = std::make_shared<durak::core::Card>(
-                    from_fb_suit(c->suit()), from_fb_rank(c->rank()));
+                    durak::core::net::FromFbSuit(c->suit()), durak::core::net::FromFbRank(c->rank()));
                 scratch_out.my_owners.push_back(sp);
                 gs.my_hand.push_back(durak::core::CardWP{sp});
             }
